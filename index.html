@@ -1,0 +1,4292 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0a0e13">
+<meta name="description" content="HEXFRONT - hex-grid turn-based modern warfare strategy, pixel art, offline single file.">
+<title>HEXFRONT 現代戦線</title>
+<style>
+:root{
+  --bg:#0a0e13; --panelbg:#111a24; --line:#2c3947; --ink:#e8eef4; --mut:#8fa3b6;
+  --blue:#2f6bad; --bluel:#74b4e8; --red:#b03a3a; --redl:#e8836f; --ok:#67c96a; --warn:#e0b73c;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink)}
+body{
+  font-family:system-ui,-apple-system,"Segoe UI","Hiragino Kaku Gothic ProN","Noto Sans JP","PingFang SC","Microsoft YaHei",sans-serif;
+  font-size:14px;line-height:1.4;letter-spacing:.01em;
+  overscroll-behavior:none;touch-action:none;user-select:none;-webkit-user-select:none;
+}
+.num,button,.kpi,.cid,.bc,.cx th,.cx td{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace}
+#wrap{position:fixed;inset:0;overflow:hidden}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;image-rendering:pixelated;cursor:crosshair}
+#top{position:absolute;left:0;right:0;top:0;z-index:12;display:flex;align-items:center;gap:8px;
+  padding:calc(6px + env(safe-area-inset-top)) 8px 6px;pointer-events:none;
+  background:linear-gradient(180deg,rgba(7,13,20,.97),rgba(10,21,30,.82) 62%,rgba(8,12,17,0));}
+#top .grp{display:flex;align-items:center;gap:8px;min-width:0}
+#top .mid{flex:1;justify-content:center;gap:10px;flex-wrap:wrap}
+#tStage{background:var(--blue);color:#fff;padding:2px 6px;border:2px solid var(--bluel);font-weight:700;font-size:12px;box-shadow:inset 0 1px rgba(255,255,255,.25)}
+#tName{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:28vw}
+.ph{padding:2px 8px;border:2px solid var(--line);background:#16202b;font-weight:700;font-size:12px}
+.ph.mine{border-color:var(--bluel);color:var(--bluel)}
+.ph.foe{border-color:var(--redl);color:var(--redl)}
+.kpi{display:flex;align-items:baseline;gap:4px;border:2px solid #405465;background:#101b25;padding:2px 8px;box-shadow:inset 0 1px rgba(255,255,255,.06)}
+.kpi b{font-size:16px}
+.kpi i{font-style:normal;color:var(--ok);font-size:11px}
+.kpi2,.kpi3{border:2px solid var(--line);background:#101820;padding:2px 8px;font-size:12px}
+#tObj{color:var(--mut);font-size:11px}
+button{background:linear-gradient(#243443,#16202b);color:#e5edf5;border:2px solid #415465;border-radius:2px;
+  padding:9px 12px;min-height:40px;font-size:13px;font-weight:700;cursor:pointer;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.45);letter-spacing:.02em}
+button:focus-visible{outline:2px solid #ffe58a;outline-offset:2px}
+button:not(:disabled):hover{border-color:#82b5d5}
+button:active{transform:translateY(1px);box-shadow:inset 0 -1px 0 rgba(0,0,0,.45)}
+button:disabled{opacity:.42;cursor:default}
+button.primary{background:linear-gradient(#3a7cbc,#24568c);border-color:var(--bluel);color:#f2f8ff}
+button.danger{background:linear-gradient(#863c3c,#612626);border-color:var(--redl)}
+button.ico{min-width:40px;padding:8px;font-size:14px}
+button.ico.off{color:#6b7c8d;border-color:#22303c}
+button.big{min-height:52px;font-size:16px}
+button.chip{padding:6px 10px;min-height:34px;font-size:12px}
+button.chip.on{background:var(--blue);border-color:var(--bluel);color:#fff}
+#bot{position:absolute;left:0;right:0;bottom:0;z-index:12;display:flex;align-items:flex-end;gap:8px;
+  padding:8px 8px calc(8px + env(safe-area-inset-bottom));pointer-events:none;
+  background:linear-gradient(0deg,rgba(8,12,17,.94),rgba(8,12,17,.5) 60%,rgba(8,12,17,0))}
+#bot>*{pointer-events:auto}
+#acts{display:flex;gap:6px;flex-wrap:wrap;flex:1;align-items:flex-end}
+#acts button{font-size:12px;padding:7px 9px;min-height:38px}
+.endside{display:flex;gap:6px;align-items:flex-end}
+#bEnd{min-width:112px}
+#zoom{position:absolute;right:8px;top:52px;z-index:12;display:flex;flex-direction:column;gap:5px}
+#zoom button{min-width:38px;min-height:34px;padding:6px}
+#panel{position:absolute;left:8px;top:calc(48px + env(safe-area-inset-top));z-index:11;width:236px;
+  background:rgba(12,21,30,.96);border:2px solid #40596c;box-shadow:0 4px 0 rgba(0,0,0,.35),inset 0 2px rgba(116,180,232,.12);padding:8px;display:none}
+#panel.on{display:block}
+#panel .ph2{font-weight:700;font-size:14px;display:flex;justify-content:space-between;gap:6px}
+.unitcode{display:inline-block;background:#152838;border:1px solid #6d9dbf;color:#e8f4ff;font:700 10px ui-monospace,monospace;padding:1px 3px;letter-spacing:.03em}
+#panel .own{font-size:11px;color:var(--bluel)}
+#panel .models{color:var(--mut);font-size:11px;margin:2px 0 6px;line-height:1.3}
+#panel .stats{font-size:11px;color:#c3d2e0;margin-top:5px}
+#panel .note{font-size:11px;color:var(--mut);margin-top:5px;border-top:1px solid var(--line);padding-top:5px}
+#panel .note.warn{color:var(--warn)}
+.sbar{display:flex;align-items:center;gap:5px;font-size:10px;margin:3px 0}
+.sbar span{width:30px;color:var(--mut)}
+.sbar i{display:block;height:7px;background:var(--ok);flex:1;border:1px solid #0c1218}
+.sbar i.b{background:var(--bluel)}.sbar i.y{background:var(--warn)}.sbar i.r{background:#d9584a}
+.sbar b{width:26px;text-align:right}
+#log{position:absolute;left:8px;bottom:calc(56px + env(safe-area-inset-bottom));z-index:11;max-width:44vw;pointer-events:none}
+#log .ln{font-size:11px;color:#b8c8d6;background:rgba(8,12,17,.55);padding:1px 4px;margin-top:2px;
+  border-left:2px solid var(--line)}
+#hintLine{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(54px + env(safe-area-inset-bottom));
+  z-index:11;font-size:12px;color:#ffe58a;background:rgba(8,12,17,.7);padding:3px 10px;border:1px solid #3a4b5c;pointer-events:none}
+#toast{position:fixed;left:50%;top:14%;transform:translateX(-50%);z-index:40;background:#16202b;border:2px solid var(--bluel);
+  padding:8px 14px;font-weight:700;opacity:0;transition:opacity .25s;pointer-events:none;max-width:80vw;text-align:center}
+#toast.on{opacity:1}
+#modal{position:absolute;inset:0;z-index:30;display:none;align-items:center;justify-content:center;padding:10px;
+  background:rgba(5,8,12,.78)}
+#modal.on{display:flex}
+#sheet{width:min(96vw,1000px);max-height:94vh;overflow:auto;background:linear-gradient(155deg,#1c2d3b,#101a24 55%);border:2px solid #40596c;
+  padding:12px 14px calc(14px + env(safe-area-inset-bottom));box-shadow:0 10px 0 rgba(0,0,0,.4),inset 0 2px rgba(116,180,232,.15)}
+#sheet h2{margin:0 0 8px;font-size:22px;letter-spacing:.12em}
+#sheet h3{margin:12px 0 6px;font-size:15px;color:var(--bluel);letter-spacing:.06em}
+#sheet p{margin:6px 0;font-size:13px}
+#sheet .mut{color:var(--mut);font-size:11px}
+#sheet .ok{color:var(--ok);font-weight:700}
+#sheet .warn{color:var(--warn)}
+#sheet .title{text-align:center;margin:6px 0 14px}
+#sheet .lg{font-size:clamp(34px,7vw,64px);font-weight:900;letter-spacing:.16em;color:#fff;
+  text-shadow:3px 3px 0 var(--blue),6px 6px 0 rgba(0,0,0,.5)}
+#sheet .sub{color:var(--bluel);letter-spacing:.3em;margin-top:6px;font-size:13px}
+#sheet .col{display:flex;flex-direction:column;gap:8px;max-width:460px;margin:0 auto}
+#sheet .row2{display:flex;gap:8px}
+#sheet .row2 button{flex:1}
+#sheet .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;justify-content:flex-end}
+#sheet .foot{text-align:center;margin-top:12px}
+#sheet .sh{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+#sheet .diffs{display:flex;gap:6px}
+.grid.stages{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:8px;margin-top:10px}
+.card{text-align:left;padding:9px;display:flex;flex-direction:column;gap:3px;min-height:104px;border-left:3px solid #659bc1}
+.card.lock{opacity:.5}
+.cid{color:var(--bluel);font-size:11px}
+.cnm{font-size:15px;font-weight:700}
+.cinfo{font-size:10px;color:var(--mut)}
+.cbr{font-size:11px;color:#b9c8d6;line-height:1.3}
+.cfoot{margin-top:auto;font-size:10px}
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(208px,1fr));gap:8px;margin-top:8px}
+.bcard{display:flex;flex-direction:column;gap:2px;text-align:left;align-items:flex-start;padding:8px}
+.bcard.off{opacity:.45}
+.bcard .bn{font-weight:700}
+.bcard .bm{font-size:10px;color:var(--mut)}
+.bcard .bs{font-size:11px;color:#c3d2e0}
+.bcard .bc{font-weight:900;color:var(--warn)}
+.spr{image-rendering:pixelated;display:block;margin:2px 0}
+.spr.big{margin:0 0 4px}
+table.cx{width:100%;border-collapse:collapse;font-size:12px}
+table.cx th{text-align:left;background:#16202b;border:1px solid var(--line);padding:4px 6px;font-size:11px}
+table.cx td{border:1px solid var(--line);padding:4px 6px;vertical-align:top}
+table.cx tr.lock td{opacity:.5}
+table.cx tr.mulrow td{background:#0d151d;color:var(--mut);font-size:10px;border-top:0}
+.cxn{font-weight:700}
+.cxm{font-size:10px;color:var(--bluel)}
+.cxd{font-size:11px;color:var(--mut)}
+table.kv{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0}
+table.kv th,table.kv td{border:1px solid var(--line);padding:4px 6px;text-align:left}
+table.kv th{background:#16202b}
+.scroll{max-height:62vh;overflow:auto}
+.fire{text-align:center}
+.fire .big{font-size:38px;font-weight:900;color:var(--warn);margin:6px 0}
+.fire .vs{font-weight:700}
+.fire .ctr{margin-top:6px;font-size:13px}
+.result{text-align:center}
+.result h2{font-size:30px;letter-spacing:.1em}
+.result.win h2{color:var(--ok)}
+.result.lose h2{color:var(--redl)}
+.result .rsub{color:var(--mut);font-size:12px}
+#rotate{position:absolute;inset:0;z-index:50;background:var(--bg);display:none;align-items:center;justify-content:center;
+  text-align:center;padding:24px;flex-direction:column;gap:14px}
+#rotate .rlg{font-size:30px;font-weight:900;letter-spacing:.14em;color:#fff;text-shadow:3px 3px 0 var(--blue)}
+#rotate p{color:var(--mut);max-width:420px}
+@media (max-height:440px){
+  body{font-size:13px}
+  #panel{width:206px;font-size:12px}
+  #panel .stats,#panel .note{font-size:10px}
+  button{min-height:36px;padding:7px 10px;font-size:12px}
+  #bEnd{min-width:96px}
+  #log{max-width:38vw}
+  #log .ln{font-size:10px}
+  #sheet h2{font-size:18px}
+  .scroll{max-height:56vh}
+}
+@media (max-width:760px){
+  #tName{display:none}
+  #tObj{display:none}
+  #panel{width:min(58vw,240px)}
+  #log{max-width:52vw}
+  #hintLine{font-size:11px;bottom:calc(50px + env(safe-area-inset-bottom))}
+}
+@media (orientation:portrait){
+  #rotate{display:flex}
+}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="cv"></canvas>
+
+  <header id="top">
+    <div class="grp">
+      <span id="tStage">ST 1</span>
+      <span id="tName">HEXFRONT</span>
+    </div>
+    <div class="grp mid">
+      <span class="ph mine" id="tPhase"></span>
+      <span class="kpi"><b id="tFunds">0</b><i id="tInc">+0</i><span class="mut" data-t="hud.funds"></span></span>
+      <span class="kpi2" id="tTurn">T1</span>
+      <span class="kpi3"><span data-t="hud.units"></span> <b id="tUnits">0/6</b></span>
+      <span id="tObj"></span>
+    </div>
+    <div class="grp">
+      <button class="ico" id="bSound">♪</button>
+      <button class="ico" id="bLang">JA</button>
+      <button class="ico" id="bMenu" data-t="b.menu">MENU</button>
+    </div>
+  </header>
+
+  <div id="zoom">
+    <button id="bIn" data-tt="b.zoomin">+</button>
+    <button id="bOut" data-tt="b.zoomout">-</button>
+    <button id="bFit" data-tt="b.fit">FIT</button>
+  </div>
+
+  <aside id="panel"></aside>
+  <div id="log"><div id="logList"></div></div>
+  <div id="hintLine"></div>
+
+  <footer id="bot">
+    <div id="acts"></div>
+    <div class="endside">
+      <button id="bUndo" data-t="b.undo">戻す</button>
+      <button id="bEnd" class="primary" data-t="b.end">ターン終了</button>
+    </div>
+  </footer>
+
+  <div id="modal"><div id="sheet"></div></div>
+  <div id="toast"></div>
+
+  <div id="rotate">
+    <div class="rlg">HEXFRONT</div>
+    <div data-t="rot.title"></div>
+    <p data-t="rot.body"></p>
+    <button data-t="rot.btn" id="rotateGo">そのまま遊ぶ</button>
+  </div>
+</div>
+<script>
+
+
+/* ==== part p01_core.js ==== */
+/* ===== HEXFRONT :: core (hex math, rng, storage) — DOM-free ===== */
+var HF = (typeof globalThis !== 'undefined') ? (globalThis.HF = globalThis.HF || {}) : {};
+
+HF.VER = '1.0.0';
+HF.lang = 'ja';
+HF.soundOn = true;
+HF.musicOn = true;
+
+/* ---------- misc ---------- */
+HF.clamp = function (v, a, b) { return v < a ? a : (v > b ? b : v); };
+HF.idx = function (s, c, r) { return r * s.W + c; };
+HF.inMap = function (s, c, r) { return c >= 0 && r >= 0 && c < s.W && r < s.H; };
+HF.keyOf = function (s, i) { return [i % s.W, (i / s.W) | 0]; };
+
+/* deterministic RNG (mulberry32) */
+HF.rng = function (seed) {
+  var a = (seed >>> 0) || 1;
+  var f = function () {
+    a = (a + 0x6D2B79F5) >>> 0;
+    var t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  f.int = function (n) { return Math.floor(f() * n); };
+  f.range = function (lo, hi) { return lo + Math.floor(f() * (hi - lo + 1)); };
+  f.pick = function (arr) { return arr[Math.floor(f() * arr.length)]; };
+  f.chance = function (p) { return f() < p; };
+  f.shuffle = function (arr) {
+    for (var i = arr.length - 1; i > 0; i--) { var j = Math.floor(f() * (i + 1)); var t = arr[i]; arr[i] = arr[j]; arr[j] = t; }
+    return arr;
+  };
+  return f;
+};
+
+/* ---------- pointy-top hex grid, odd-r offset ---------- */
+HF.DIRS = [
+  [[1, 0], [0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1]],    /* even row: E NE NW W SW SE */
+  [[1, 0], [1, -1], [0, -1], [-1, 0], [0, 1], [1, 1]]       /* odd  row: E NE NW W SW SE */
+];
+HF.DIRNAME = ['E', 'NE', 'NW', 'W', 'SW', 'SE'];
+
+HF.neighbors = function (s, c, r, out) {
+  out = out || [];
+  out.length = 0;
+  var d = HF.DIRS[r & 1];
+  for (var k = 0; k < 6; k++) {
+    var nc = c + d[k][0], nr = r + d[k][1];
+    if (nc >= 0 && nr >= 0 && nc < s.W && nr < s.H) out.push(nr * s.W + nc);
+  }
+  return out;
+};
+
+HF.axial = function (c, r) {
+  var x = c - ((r - (r & 1)) >> 1);
+  return [x, -x - r, r];
+};
+HF.dist = function (c1, r1, c2, r2) {
+  var a = HF.axial(c1, r1), b = HF.axial(c2, r2);
+  return (Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2])) / 2;
+};
+HF.distIdx = function (s, i, j) {
+  return HF.dist(i % s.W, (i / s.W) | 0, j % s.W, (j / s.W) | 0);
+};
+/* ring of hexes at distance<=rad around c,r (inside map) */
+HF.hexesWithin = function (s, c, r, rad, out) {
+  out = out || [];
+  out.length = 0;
+  for (var rr = Math.max(0, r - rad); rr <= Math.min(s.H - 1, r + rad); rr++) {
+    for (var cc = Math.max(0, c - rad - 1); cc <= Math.min(s.W - 1, c + rad + 1); cc++) {
+      if (HF.dist(cc, rr, c, r) <= rad) out.push(rr * s.W + cc);
+    }
+  }
+  return out;
+};
+
+/* pixel centre of a hex (world units, hex "radius" = R) */
+HF.hexW = function (R) { return Math.sqrt(3) * R; };
+HF.hexCX = function (s, c, r, R) { return HF.hexW(R) * (c + 0.5 * (r & 1)) + HF.hexW(R) / 2; };
+HF.hexCY = function (s, r, R) { return R * 1.5 * r + R + 2 * R * 0.0; }
+
+/* inverse: world pixel -> nearest hex */
+HF.pxToHex = function (s, x, y, R) {
+  var hw = HF.hexW(R);
+  var r = Math.round((y - R) / (1.5 * R));
+  r = HF.clamp(r, 0, s.H - 1);
+  var best = -1, bd = 1e9;
+  var cand = [r - 1, r, r + 1];
+  for (var k = 0; k < 3; k++) {
+    var rr = cand[k];
+    if (rr < 0 || rr >= s.H) continue;
+    var c0 = Math.round(x / hw - 0.5 * (rr & 1));
+    for (var cc = c0 - 1; cc <= c0 + 1; cc++) {
+      if (cc < 0 || cc >= s.W) continue;
+      var dx = x - HF.hexCX(s, cc, rr, R), dy = y - HF.hexCY(s, rr, R);
+      var d = dx * dx + dy * dy;
+      if (d < bd) { bd = d; best = rr * s.W + cc; }
+    }
+  }
+  return best;
+};
+
+/* ---------- storage (local, safe fallback) ---------- */
+HF.store = (function () {
+  var mem = {}, ok = true;
+  function ls() {
+    try {
+      if (typeof localStorage === 'undefined' || !localStorage) return null;
+      var k = '__hf_probe__';
+      localStorage.setItem(k, '1'); localStorage.removeItem(k);
+      return localStorage;
+    } catch (e) { ok = false; return null; }
+  }
+  return {
+    available: function () { return !!ls(); },
+    get: function (k) {
+      var L = ls(); if (!L) return mem[k] === undefined ? null : mem[k];
+      try { return L.getItem(k); } catch (e) { return null; }
+    },
+    set: function (k, v) {
+      var L = ls(); if (!L) { mem[k] = v; return true; }
+      try { L.setItem(k, v); return true; } catch (e) { return false; }
+    },
+    del: function (k) {
+      var L = ls(); if (!L) { delete mem[k]; return; }
+      try { L.removeItem(k); } catch (e) { }
+    },
+    ok: function () { return ok; }
+  };
+})();
+
+HF.SAVE_KEY = 'hexfront.save.v1';
+HF.PROFILE_KEY = 'hexfront.profile.v1';
+
+/* profile: settings + progression (persisted even after a game finishes) */
+HF.loadProfile = function () {
+  var p = null;
+  try { p = JSON.parse(HF.store.get(HF.PROFILE_KEY) || 'null'); } catch (e) { p = null; }
+  if (!p || p.v !== 1) {
+    p = { v: 1, lang: null, sound: 1, music: 1, diff: 'normal', unlocked: 1, best: {}, seen: [], plays: 0 };
+  }
+  if (p.music === undefined) p.music = p.sound === 0 ? 0 : 1;
+  if (!p.best) p.best = {};
+  if (!p.seen) p.seen = [];
+  if (!p.unlocked) p.unlocked = 1;
+  return p;
+};
+HF.saveProfile = function (p) { return HF.store.set(HF.PROFILE_KEY, JSON.stringify(p)); };
+
+/* in-progress game save */
+HF.writeSave = function (rec) { return HF.store.set(HF.SAVE_KEY, JSON.stringify(rec)); };
+HF.readSave = function () {
+  var raw = HF.store.get(HF.SAVE_KEY);
+  if (!raw) return null;
+  try { var o = JSON.parse(raw); } catch (e) { return null; }
+  if (!o || o.v !== 1 || !o.st) return null;
+  return o;
+};
+HF.clearSave = function () { HF.store.del(HF.SAVE_KEY); };
+
+/* ---------- localised text helper ---------- */
+/* L({ja:'',en:'',zh:''}) -> string in current language */
+HF.L = function (o) {
+  if (!o) return '';
+  if (typeof o === 'string') return o;
+  var v = o[HF.lang];
+  if (v === undefined || v === null || v === '') v = o.en;
+  return v === undefined ? '' : v;
+};
+HF.T = function (key, vars) {
+  var d = HF.I18N[HF.lang] || HF.I18N.en;
+  var s = (d && d[key] !== undefined) ? d[key] : (HF.I18N.en[key] !== undefined ? HF.I18N.en[key] : key);
+  if (vars) s = s.replace(/\{(\w+)\}/g, function (m, k) { return (vars[k] === undefined || vars[k] === null) ? m : String(vars[k]); });
+  return s;
+};
+HF.LANGS = ['ja', 'en', 'zh'];
+HF.LANGNAME = { ja: '日本語', en: 'English', zh: '中文' };
+HF.pickLang = function (prefer) {
+  if (prefer && HF.LANGS.indexOf(prefer) >= 0) return prefer;
+  var nav = '';
+  try { nav = (typeof navigator !== 'undefined') ? (navigator.language || '') : ''; } catch (e) { }
+  nav = (nav || '').toLowerCase();
+  if (nav.indexOf('zh') === 0) return 'zh';
+  if (nav.indexOf('ja') === 0) return 'ja';
+  if (nav.indexOf('en') === 0) return 'en';
+  return 'en';
+};
+
+
+/* ==== part p02_i18n.js ==== */
+/* ===== HEXFRONT :: UI strings (ja / en / zh) ===== */
+/* Unit / terrain / stage names live with their data as {ja,en,zh} triples. */
+HF.I18N = {
+  ja: {
+    'app.title': 'HEXFRONT',
+    'app.sub': '現代戦線',
+    'app.tag': 'ヘックス・ターン制ストラテジー',
+    'screen.title': 'HEXFRONT',
+    'screen.sub': '現代戦線 / MODERN FRONT',
+
+    'b.new': '新しい作戦',
+    'b.continue': '続きから',
+    'b.stages': 'ステージ',
+    'b.codex': '兵器図鑑',
+    'b.help': 'ルール',
+    'b.settings': '設定',
+    'b.menu': 'MENU',
+    'b.end': 'ターン終了',
+    'b.undo': '戻す',
+    'b.fit': '全体',
+    'b.zoomin': '拡大',
+    'b.zoomout': '縮小',
+    'b.back': 'もどる',
+    'b.close': '閉じる',
+    'b.ok': 'OK',
+    'b.cancel': 'やめる',
+    'b.retry': 'やり直す',
+    'b.next': '次のステージ',
+    'b.surrender': '降参',
+    'b.erase': '保存データを消去',
+    'b.resume': '続きを再開',
+    'b.replay': 'もう一度',
+    'b.list': '一覧',
+
+    'hud.turn': 'ターン',
+    'hud.funds': '資金',
+    'hud.income': '収入',
+    'hud.units': '部隊',
+    'hud.stage': 'ST',
+    'hud.phase.you': 'あなたの番',
+    'hud.phase.enemy': '敵の番',
+    'hud.hint': '部隊をタップ',
+
+    'rot.title': '画面を横にしてね',
+    'rot.body': 'HEXFRONTは横長画面で遊ぶゲームです。スマートフォンを横向きにするか、ブラウザウィンドウを横長にしてください。',
+    'rot.btn': 'そのまま遊ぶ',
+
+    'title.pick': 'ステージを選んで開始',
+    'title.saved': 'セーブデータを発見！ {n}ターン目',
+    'title.noSave': '進行中のセーブはありません',
+    'title.progress': '解禁 {n}/{m}',
+
+    'stages.title': '作戦選択',
+    'stages.locked': '未解禁',
+    'stages.lockinfo': '前のステージをクリアすると解禁されます',
+    'stages.best': 'ベスト {n}ターン',
+    'stages.norec': '記録なし',
+    'stages.size': '{w}×{h} HEX',
+    'stages.turnlimit': '制限 {n}ターン',
+    'stages.unlock': '解禁',
+    'stages.free': 'プレイ可能',
+    'stages.clear': 'クリア済み',
+    'stages.pick': 'この作戦を開始',
+
+    'set.title': '設定',
+    'set.sound': '効果音',
+    'set.music': 'BGM',
+    'set.audioerror': '音声を再生できません。ブラウザの音声設定を確認してください。',
+    'set.on': 'ON',
+    'set.off': 'OFF',
+    'set.lang': '言語',
+    'set.diff': '難易度',
+    'set.anim': '演出',
+    'set.full': 'すべて表示',
+    'set.storage': '保存領域',
+    'set.storage.ok': '利用可能',
+    'set.storage.no': '使えません（セッション限定）',
+    'set.eraseq': 'ステージ進行・記録・セーブデータをすべて消します。よろしいですか？',
+    'set.erased': '保存データを消去しました',
+    'set.about': '単一HTML／外部ライブラリ不要・オフライン動作。セーブはこの端末内のみ。',
+    'diff.easy': 'やさしい',
+    'diff.normal': 'ふつう',
+    'diff.hard': 'むずかしい',
+
+    'help.title': 'ルール',
+    'help.t0': '勝利条件',
+    'help.b0': '敵の**本営（HQ）**を占領すれば勝ちです。占領は、占領できる部隊（歩兵系）が本営のマスに留まり、ターン終了時に占領ゲージをためることで進みます（本営は3ゲージ）。占領中の部隊には本営が応射してくるので、護衛の敵を先に叩いておきましょう。自分の本営が落ちたら敗北です。敵が部隊も生産施設も資金も失うと降伏します。',
+    'help.t1': '1ターンの流れ',
+    'help.b1': '① 収入（占領した都市・工場から資金が入る）→ ② 補給（自軍の都市・補給基地の周辺なら燃料と弾薬が回復）→ ③ 移動と攻撃（1部隊に1回まで）→ ④ 生産（工場・飛行場をタップ）→ ⑤ ターン終了で占領判定。',
+    'help.t2': 'ヘックスと地形',
+    'help.b2': '盤面は六角形（ヘックス）。平野・道・森・丘陵・山・河・橋・湖があります。**道**は移動が速く、**森・丘陵・山**は防御が上がります。**山**は車両が入れず、**河**は歩兵だけ渡れ、車両は橋を通ります。**湖**は航空機のみ通過できます。部隊を選択していない状態で地形をタップすると詳細を確認できます。部隊上の英字は兵種の略号で、タップするか兵器図鑑で名前を確認できます。小さいときは拡大してください。',
+    'help.t3': '占領と資金',
+    'help.b3': '都市・農場・工場・飛行場・補給基地・本営は占領できます（大きな損害を受けていない占領可能部隊がそのマスにいること）。占領すると**毎ターンの収入**になり、**工場では陸上兵器**、**飛行場では航空機**を生産できます。敵の生産施設を奪えばこちらも使えます。',
+    'help.t4': '補給',
+    'help.b4': '部隊は**燃料**（移動）と**弾薬**（攻撃）を持ちます。自軍の都市・工場・飛行場・補給基地・本営の真上か隣、または**補給トラック**の隣にいると補給されます。燃料切れは移動不可、弾薬切れは兵銃のみで攻撃不可の兵器があります。前線が伸びすぎると補給が切れます。',
+    'help.t5': '戦闘',
+    'help.b5': '攻撃力は**兵器の相性**で大きく変わります。歩兵は戦車に太刀打ちできず、**対戦車ミサイル**や**攻撃ヘリ**が有効。戦車は装甲車両を砕き、**自走高射砲／地対空ミサイル**が航空機を落とします。遠隔砲は反撃を受けません。反撃は射程内かつ生存時に発動します。',
+    'help.t6': '長引くと消耗戦',
+    'help.b6': 'ステージの制限ターンに近づくと全ダメージが増加します。最終ターンは双方が行動した後、評価点（資金＋残存部隊＋占領地）で勝敗を判定します。同点なら先手の勝利です。',
+    'help.t7': '操作',
+    'help.tab': '<table class="kv"><tr><th>操作</th><th>スマホ</th><th>PC</th></tr>' +
+      '<tr><td>部隊選択／実行</td><td>タップ</td><td>クリック</td></tr>' +
+      '<tr><td>盤面を動かす</td><td>ドラッグ／2本で拡大縮小</td><td>ドラッグ／ホイール</td></tr>' +
+      '<tr><td>ターン終了</td><td>ボタン</td><td>Space / Enter</td></tr>' +
+      '<tr><td>戻る</td><td>ボタン</td><td>U / Esc</td></tr>' +
+      '<tr><td>全体表示</td><td>ボタン</td><td>F</td></tr>' +
+      '<tr><td>ルール／図鑑</td><td>MENU</td><td>H / C</td></tr>' +
+      '<tr><td>音 ON/OFF</td><td>TOPのスピーカー</td><td>M</td></tr></table>',
+
+    'cod.title': '兵器図鑑',
+    'cod.land': '陸上兵器',
+    'cod.air': '航空機・回転翼',
+    'cod.terr': '地形',
+    'cod.locked': '未解禁の兵器',
+    'cod.avail': '使用可能',
+    'cod.cost': 'コスト',
+    'cod.move': '移動',
+    'cod.range': '射程',
+    'cod.atk': '火力',
+    'cod.hp': 'HP',
+    'cod.ammo': '弾薬',
+    'cod.fuel': '燃料',
+    'cod.cap': '占領',
+    'cod.yes': 'できる',
+    'cod.no': 'できない',
+    'cod.models': '実在兵器',
+    'cod.mult': '攻撃倍率',
+    'cod.terrainnote': '防御ボーナスは受ける側の地形で決まります',
+
+    'cls.INF': '步兵',
+    'cls.SOFT': '装甲車両',
+    'cls.ARM': '装甲主力',
+    'cls.AIR': '航空',
+    'dom.F': '歩行',
+    'dom.W': '輪郭',
+    'dom.T': '履帯',
+    'dom.A': '航空',
+
+    'sel.none': '部隊をタップしてください',
+    'sel.mine': '移動先（緑）をタップ／敵をタップで攻撃',
+    'sel.after': '攻撃する敵をタップ（タップなしで終了も可）',
+    'sel.target': '攻撃対象をタップ',
+    'sel.done': 'この部隊は行動済み',
+    'sel.enemy': '敵部隊',
+    'sel.nostop': 'そこには置けません',
+    'sel.nomove': '燃料が足りません',
+    'sel.noammo': '弾薬がありません',
+    'sel.indirect': '遠隔兵器は隣を攻撃できません',
+    'sel.hint.tap': '移動 → 攻撃の順で動かせます',
+    'sel.cantattack': 'この兵器は航空機を攻撃できません',
+
+    'fc.title': '攻撃予測',
+    'fc.dmg': '与えるダメージ {n}',
+    'fc.counter': '受ける反撃 {n}',
+    'fc.nocounter': '反撃なし',
+    'fc.vs': '{a} → {b}',
+    'fc.terr': '地形防御 +{p}%',
+    'fc.go': '攻撃',
+
+    'a.wait': '待機',
+    'a.load': '輸送',
+    'a.unload': '展開',
+    'a.fort': '陣地構築',
+    'a.depot': '補給基地',
+    'a.build': '生産',
+    'a.supply': '補給',
+
+    'build.title': '{b}で生産',
+    'build.pick': '兵器を選択',
+    'build.noFunds': '資金が足りません',
+    'build.noCap': '部隊上限 {n} に到達',
+    'build.locked': '未解禁',
+    'build.land': '工場',
+    'build.air': '飛行場',
+    'build.out': '生産能力なし（占領または生産中止）',
+    'build.need': '生産施設を占領すると拡張できます',
+
+    'log.turn': '— T{n} {side} —',
+    'log.move': '{u}を{c}へ',
+    'log.attack': '{a}が{b}を攻撃 −{d}',
+    'log.counter': '反撃 −{d}',
+    'log.ko': '{b}撃破',
+    'log.noammo': '弾薬切れ：{a}は攻撃不可',
+    'log.cap': '{p}を占領',
+    'log.capp': '{p}の占領 {n}/{m}',
+    'log.build': '{u}生産 −{c}',
+    'log.buildno': '生産できません',
+    'log.income': '収入 +{n}（{p}拠点）',
+    'log.supply': '{n}部隊が補給',
+    'log.starve': '補給切れ {n}部隊',
+    'log.fort': '陣地を構築',
+    'log.depot': '補給基地を建設 −{c}',
+    'log.load': '{a}を{b}に輸送',
+    'log.unload': '貨物を{p}に展開',
+    'log.hq': '本営が応戦 −{d}',
+    'log.designate': '無人機が目標指定 +{p}%',
+    'log.win': '{s}の勝利！',
+    'log.lose': '{s}の敗北…',
+    'log.timeout': '制限ターン到達：評価点 {a}対{b}',
+    'log.rout': '{s}は抗戦不能',
+    'log.escalate': '戦線激化 ダメージ ×{m}',
+    'log.surrender': '降参しました',
+
+    'res.win': '作戦成功',
+    'res.lose': '作戦失敗',
+    'res.turns': '経過ターン {n}',
+    'res.best': 'ベスト {n}ターン',
+    'res.new': '新記録！',
+    'res.ko': '撃破／損失 {a}対{b}',
+    'res.funds': '残余資金 {n}',
+    'res.score': '評価点 {n}',
+    'res.unlock': '{n}が解禁されました',
+    'res.rating': '評価',
+    'res.title': '結果',
+
+    'menu.title': 'MENU',
+    'menu.save': '自動保存されています',
+    'menu.quit': 'タイトルへ',
+    'menu.quitq': 'セーブしてタイトルに戻ります。よろしいですか？',
+
+    'obj.hq': '敵本営を占領せよ',
+    'obj.hint': '都市を占領して収入と補拠点を増やせ',
+
+    'you': '青軍',
+    'enemy': '赤軍',
+    'you.s': '青',
+    'enemy.s': '赤',
+
+    'save.found': 'セーブデータを発見',
+    'save.none': 'セーブなし',
+    'save.written': '端末内に保存',
+    'save.warn': 'この端末では保存領域が使えないため、閉じると失われます',
+
+    'tip.rotate': '横長画面推奨',
+    'tip.pan': '盤面はドラッグ／ホイールで動かせます',
+    'tip.build': '工場をタップで生産',
+    'tip.supply': '補給トラックを前線へ',
+    'tip.newstage': '新しいステージが解禁',
+
+    'time.turn': 'T{n}',
+    'misc.vs': '対',
+    'misc.size': '{w}×{h}',
+    'misc.hp': 'HP {n}',
+    'misc.lock': 'LOCK',
+    'misc.pct': '{n}%',
+    'misc.captick': '占領 {n}/{m}'
+  },
+
+  en: {
+    'app.title': 'HEXFRONT',
+    'app.sub': 'Modern Front',
+    'app.tag': 'Hex turn-based strategy',
+    'screen.title': 'HEXFRONT',
+    'screen.sub': 'MODERN FRONT',
+
+    'b.new': 'New campaign',
+    'b.continue': 'Continue',
+    'b.stages': 'Operations',
+    'b.codex': 'Codex',
+    'b.help': 'Rules',
+    'b.settings': 'Settings',
+    'b.menu': 'MENU',
+    'b.end': 'End turn',
+    'b.undo': 'Undo',
+    'b.fit': 'Fit',
+    'b.zoomin': 'Zoom +',
+    'b.zoomout': 'Zoom -',
+    'b.back': 'Back',
+    'b.close': 'Close',
+    'b.ok': 'OK',
+    'b.cancel': 'Cancel',
+    'b.retry': 'Retry',
+    'b.next': 'Next operation',
+    'b.surrender': 'Surrender',
+    'b.erase': 'Erase saved data',
+    'b.resume': 'Resume',
+    'b.replay': 'Play again',
+    'b.list': 'List',
+
+    'hud.turn': 'Turn',
+    'hud.funds': 'Funds',
+    'hud.income': 'Income',
+    'hud.units': 'Units',
+    'hud.stage': 'ST',
+    'hud.phase.you': 'Your turn',
+    'hud.phase.enemy': 'Enemy turn',
+    'hud.hint': 'Tap a unit',
+
+    'rot.title': 'Please rotate your device',
+    'rot.body': 'HEXFRONT is built for a wide screen. Turn your phone sideways, or widen the browser window.',
+    'rot.btn': 'Play anyway',
+
+    'title.pick': 'Choose an operation',
+    'title.saved': 'Save found — turn {n}',
+    'title.noSave': 'No operation in progress',
+    'title.progress': 'Unlocked {n}/{m}',
+
+    'stages.title': 'Operations',
+    'stages.locked': 'Locked',
+    'stages.lockinfo': 'Clear the previous operation to unlock',
+    'stages.best': 'Best {n} turns',
+    'stages.norec': 'No record',
+    'stages.size': '{w}×{h} hexes',
+    'stages.turnlimit': 'Limit {n} turns',
+    'stages.unlock': 'Locked',
+    'stages.free': 'Ready',
+    'stages.clear': 'Cleared',
+    'stages.pick': 'Start this operation',
+
+    'set.title': 'Settings',
+    'set.sound': 'Sound effects',
+    'set.music': 'Music',
+    'set.audioerror': 'Audio is unavailable. Check your browser audio settings.',
+    'set.on': 'ON',
+    'set.off': 'OFF',
+    'set.lang': 'Language',
+    'set.diff': 'Difficulty',
+    'set.anim': 'Animations',
+    'set.full': 'Show everything',
+    'set.storage': 'Local storage',
+    'set.storage.ok': 'Available',
+    'set.storage.no': 'Unavailable (session only)',
+    'set.eraseq': 'This erases all progress, records and the saved operation. Continue?',
+    'set.erased': 'Saved data erased',
+    'set.about': 'Single HTML file, no libraries, works offline. Saves stay on this device.',
+    'diff.easy': 'Easy',
+    'diff.normal': 'Normal',
+    'diff.hard': 'Hard',
+
+    'help.title': 'Rules',
+    'help.t0': 'Objective',
+    'help.b0': 'Capture the enemy **HQ**. Capture advances when a capturing unit (infantry type) stays on the hex at the end of its turn, filling a gauge (HQ needs 3 pips). The HQ shoots back while it is being taken, so silence its guard first. Lose if your own HQ falls. A side with no units, no production and no funds surrenders.',
+    'help.t1': 'Turn sequence',
+    'help.b1': '① Income (from captured cities and industry) → ② Supply (fuel/ammo refill near your own cities, bases or a supply truck) → ③ Move and attack (one action per unit) → ④ Production (tap a factory or airfield) → ⑤ End turn resolves captures.',
+    'help.t2': 'Hexes and terrain',
+    'help.b2': 'The battlefield is a hex grid: plains, road, forest, hill, mountain, river, bridge, lake. **Roads** speed movement, **forest/hill/mountain** raise defence. **Mountains** stop vehicles, **rivers** are foot-only unless you use a **bridge**, and only aircraft cross **lakes**. Tap terrain with no unit selected to inspect it. Unit codes identify their types; tap a unit or look them up in the codex. Zoom in if the codes are too small.',
+    'help.t3': 'Capture and funds',
+    'help.b3': 'Cities, farms, factories, airfields, depots and the HQ can be captured by a healthy capturing unit standing on them. Captured property pays **income every turn**; a **factory builds land weapons**, an **airfield builds aircraft**. Turned enemy industry works for you too.',
+    'help.t4': 'Supply',
+    'help.b4': 'Units carry **fuel** (movement) and **ammo** (weapons). Standing on or beside your own city, factory, airfield, depot or HQ — or beside a **supply truck** — resupplies you. No fuel means no movement; ammo-hungry weapons cannot fire when empty. Long spearheads run dry.',
+    'help.t5': 'Combat',
+    'help.b5': 'Damage depends heavily on **weapon matchup**. Infantry barely scratch tanks — use **ATGM** teams or **attack helicopters**. Tanks crush soft vehicles, **AAA / SAM** shoot aircraft down. Indirect artillery never takes counterfire. Counterattacks happen when the defender lives and its range covers the attacker.',
+    'help.t6': 'A war of attrition',
+    'help.b6': 'Near the turn limit every hit gets stronger. After both sides play the final turn, score (funds + surviving units + captured land) decides; ties go to the first player.',
+    'help.t7': 'Controls',
+    'help.tab': '<table class="kv"><tr><th>Action</th><th>Touch</th><th>Keyboard</th></tr>' +
+      '<tr><td>Select / confirm</td><td>Tap</td><td>Click</td></tr>' +
+      '<tr><td>Pan / zoom the map</td><td>Drag / pinch</td><td>Drag / wheel</td></tr>' +
+      '<tr><td>End turn</td><td>Button</td><td>Space / Enter</td></tr>' +
+      '<tr><td>Undo</td><td>Button</td><td>U / Esc</td></tr>' +
+      '<tr><td>Fit map</td><td>Button</td><td>F</td></tr>' +
+      '<tr><td>Rules / codex</td><td>MENU</td><td>H / C</td></tr>' +
+      '<tr><td>Sound on/off</td><td>Speaker in TOP</td><td>M</td></tr></table>',
+
+    'cod.title': 'Weapons codex',
+    'cod.land': 'Land systems',
+    'cod.air': 'Air & rotary',
+    'cod.terr': 'Terrain',
+    'cod.locked': 'Not yet fielded',
+    'cod.avail': 'Available',
+    'cod.cost': 'Cost',
+    'cod.move': 'Move',
+    'cod.range': 'Range',
+    'cod.atk': 'Power',
+    'cod.hp': 'HP',
+    'cod.ammo': 'Ammo',
+    'cod.fuel': 'Fuel',
+    'cod.cap': 'Capture',
+    'cod.yes': 'yes',
+    'cod.no': 'no',
+    'cod.models': 'Real systems',
+    'cod.mult': 'Damage multiplier',
+    'cod.terrainnote': 'Defence bonus comes from the defender terrain',
+
+    'cls.INF': 'Infantry',
+    'cls.SOFT': 'Soft skin',
+    'cls.ARM': 'Armoured',
+    'cls.AIR': 'Air',
+    'dom.F': 'Foot',
+    'dom.W': 'Wheeled',
+    'dom.T': 'Tracked',
+    'dom.A': 'Air',
+
+    'sel.none': 'Tap a unit',
+    'sel.mine': 'Tap a green hex to move, or tap an enemy to attack',
+    'sel.after': 'Pick the target to fire at',
+    'sel.target': 'Pick a target',
+    'sel.done': 'Already acted',
+    'sel.enemy': 'Enemy unit',
+    'sel.nostop': 'You cannot stop there',
+    'sel.nomove': 'Out of fuel',
+    'sel.noammo': 'Out of ammo',
+    'sel.indirect': 'Indirect weapons cannot fire at an adjacent hex',
+    'sel.hint.tap': 'Move first, then attack',
+    'sel.cantattack': 'This weapon cannot engage aircraft',
+
+    'fc.title': 'Fire forecast',
+    'fc.dmg': 'Dealt damage {n}',
+    'fc.counter': 'Counterfire {n}',
+    'fc.nocounter': 'No counterfire',
+    'fc.vs': '{a} → {b}',
+    'fc.terr': 'Terrain defence +{p}%',
+    'fc.go': 'Fire',
+
+    'a.wait': 'Hold',
+    'a.load': 'Load',
+    'a.unload': 'Unload',
+    'a.fort': 'Dig in',
+    'a.depot': 'Build depot',
+    'a.build': 'Build',
+    'a.supply': 'Resupply',
+
+    'build.title': 'Build at {b}',
+    'build.pick': 'Choose a system',
+    'build.noFunds': 'Not enough funds',
+    'build.noCap': 'Unit cap {n} reached',
+    'build.locked': 'Locked',
+    'build.land': 'Factory',
+    'build.air': 'Airfield',
+    'build.out': 'Cannot produce (garrisoned or cap reached)',
+    'build.need': 'Capture industry to expand',
+
+    'log.turn': '— T{n} {side} —',
+    'log.move': '{u} moved to {c}',
+    'log.attack': '{a} fired on {b} −{d}',
+    'log.counter': 'Counter −{d}',
+    'log.ko': '{b} destroyed',
+    'log.noammo': 'Out of ammo: {a} cannot fire',
+    'log.cap': 'Captured {p}',
+    'log.capp': 'Capturing {p} {n}/{m}',
+    'log.build': 'Built {u} −{c}',
+    'log.buildno': 'Cannot build',
+    'log.income': 'Income +{n} from {p} sites',
+    'log.supply': '{n} units resupplied',
+    'log.starve': 'Supply cut: {n} units',
+    'log.fort': 'Field works dug',
+    'log.depot': 'Depot built −{c}',
+    'log.load': '{a} loaded into {b}',
+    'log.unload': 'Cargo deployed at {p}',
+    'log.hq': 'HQ returns fire −{d}',
+    'log.designate': 'UAV designates +{p}%',
+    'log.win': '{s} wins!',
+    'log.lose': '{s} loses…',
+    'log.timeout': 'Turn limit: score {a} vs {b}',
+    'log.rout': '{s} can no longer fight',
+    'log.escalate': 'Escalation: damage ×{m}',
+    'log.surrender': 'Surrendered',
+
+    'res.win': 'Objective achieved',
+    'res.lose': 'Operation failed',
+    'res.turns': 'Turns {n}',
+    'res.best': 'Best {n} turns',
+    'res.new': 'New record!',
+    'res.ko': 'Destroyed {a} vs {b}',
+    'res.funds': 'Funds left {n}',
+    'res.score': 'Score {n}',
+    'res.unlock': '{n} unlocked',
+    'res.rating': 'Rating',
+    'res.title': 'Result',
+
+    'menu.title': 'MENU',
+    'menu.save': 'Saved automatically',
+    'menu.quit': 'Back to title',
+    'menu.quitq': 'Save and return to the title screen?',
+
+    'obj.hq': 'Capture the enemy HQ',
+    'obj.hint': 'Take cities to grow income and supply',
+
+    'you': 'BLUE',
+    'enemy': 'RED',
+    'you.s': 'B',
+    'enemy.s': 'R',
+
+    'save.found': 'Save found',
+    'save.none': 'No save',
+    'save.written': 'Saved on this device',
+    'save.warn': 'Local storage unavailable — progress is lost when you close',
+
+    'tip.rotate': 'Wide screen recommended',
+    'tip.pan': 'Drag or scroll to pan the map',
+    'tip.build': 'Tap a factory to build',
+    'tip.supply': 'Keep trucks behind the front',
+    'tip.newstage': 'New operation unlocked',
+
+    'time.turn': 'T{n}',
+    'misc.vs': 'vs',
+    'misc.size': '{w}×{h}',
+    'misc.hp': 'HP {n}',
+    'misc.lock': 'LOCK',
+    'misc.pct': '{n}%',
+    'misc.captick': 'Capture {n}/{m}'
+  },
+
+  zh: {
+    'app.title': 'HEXFRONT',
+    'app.sub': '现代战线',
+    'app.tag': '六角格回合制战略',
+    'screen.title': 'HEXFRONT',
+    'screen.sub': '现代战线 / MODERN FRONT',
+
+    'b.new': '新战役',
+    'b.continue': '继续',
+    'b.stages': '战役选择',
+    'b.codex': '武器图鉴',
+    'b.help': '规则',
+    'b.settings': '设置',
+    'b.menu': '菜单',
+    'b.end': '结束回合',
+    'b.undo': '撤销',
+    'b.fit': '全览',
+    'b.zoomin': '放大',
+    'b.zoomout': '缩小',
+    'b.back': '返回',
+    'b.close': '关闭',
+    'b.ok': '确定',
+    'b.cancel': '取消',
+    'b.retry': '重试',
+    'b.next': '下一战役',
+    'b.surrender': '投降',
+    'b.erase': '清除存档',
+    'b.resume': '继续游戏',
+    'b.replay': '再来一次',
+    'b.list': '列表',
+
+    'hud.turn': '回合',
+    'hud.funds': '资金',
+    'hud.income': '收入',
+    'hud.units': '部队',
+    'hud.stage': '战役',
+    'hud.phase.you': '你的回合',
+    'hud.phase.enemy': '敌方回合',
+    'hud.hint': '点击部队',
+
+    'rot.title': '请横向使用屏幕',
+    'rot.body': 'HEXFRONT 是为横屏设计的。请把手机横过来，或把浏览器窗口拉宽。',
+    'rot.btn': '继续玩',
+
+    'title.pick': '选择战役开始',
+    'title.saved': '发现存档 — 第 {n} 回合',
+    'title.noSave': '没有进行中的存档',
+    'title.progress': '已解锁 {n}/{m}',
+
+    'stages.title': '战役选择',
+    'stages.locked': '未解锁',
+    'stages.lockinfo': '通关上一个战役后解锁',
+    'stages.best': '最佳 {n} 回合',
+    'stages.norec': '暂无记录',
+    'stages.size': '{w}×{h} 格',
+    'stages.turnlimit': '限制 {n} 回合',
+    'stages.unlock': '未解锁',
+    'stages.free': '可进行',
+    'stages.clear': '已通关',
+    'stages.pick': '开始该战役',
+
+    'set.title': '设置',
+    'set.sound': '音效',
+    'set.music': '背景音乐',
+    'set.audioerror': '无法播放声音，请检查浏览器的音频设置。',
+    'set.on': '开',
+    'set.off': '关',
+    'set.lang': '语言',
+    'set.diff': '难度',
+    'set.anim': '动画',
+    'set.full': '全部显示',
+    'set.storage': '本地存储',
+    'set.storage.ok': '可用',
+    'set.storage.no': '不可用（仅本次）',
+    'set.eraseq': '将清除全部进度、记录与存档。确定吗？',
+    'set.erased': '存档已清除',
+    'set.about': '单个 HTML 文件，无需外部库，可离线运行。存档仅保存在本机。',
+    'diff.easy': '简单',
+    'diff.normal': '普通',
+    'diff.hard': '困难',
+
+    'help.title': '规则',
+    'help.t0': '胜利条件',
+    'help.b0': '占领敌方**本部（HQ）**即获胜。可占领部队（步兵类）留在该格并在回合结束时推进占领槽（本部需 3 格）。占领期间本部会还击，先清掉它的护卫队。己方本部陷落即失败。敌方失去全部部队、生产设施与资金即投降。',
+    'help.t1': '回合流程',
+    'help.b1': '① 收入（来自已占领的城市与工业）→ ② 补给（在己方城市、基地或补给车附近恢复燃料与弹药）→ ③ 移动与攻击（每部队一次行动）→ ④ 生产（点击工厂或机场）→ ⑤ 结束回合结算占领。',
+    'help.t2': '六角格与地形',
+    'help.b2': '战场由六角格组成：平原、公路、森林、丘陵、山地、河流、桥梁、湖泊。**公路**加快移动，**森林/丘陵/山地**提高防御。**山地**禁止车辆通行，**河流**仅步兵可渡（车辆走**桥梁**），**湖泊**只有飞机可越过。未选中部队时点击地形可查看详情。部队上的字母是兵种代号，点击部队或查看武器图鉴可了解名称；代号太小时可放大地图。',
+    'help.t3': '占领与资金',
+    'help.b3': '城市、农场、工厂、机场、补给站与本部均可占领（状态良好且可占领的部队停在格上）。占领后**每回合获得收入**；**工厂生产陆军武器**，**机场生产飞机**。夺取敌方的生产设施也能使用。',
+    'help.t4': '补给',
+    'help.b4': '部队带有**燃料**（移动）与**弹药**（武器）。停在己方城市、工厂、机场、补给站或本部的格上或相邻格，或停在**补给车**旁即可补给。缺燃料无法移动，缺弹药的武器不能开火。战线过长补给就会中断。',
+    'help.t5': '战斗',
+    'help.b5': '伤害极大程度取决于**武器相克**。步兵难以对付坦克，应使用**反坦克导弹**或**武装直升机**。坦克碾碎轻型车辆，**高炮/地空导弹**击落飞机。间接火力不会遭到反击。防守方存活且射程覆盖时会自动反击。',
+    'help.t6': '拖延即消耗战',
+    'help.b6': '接近回合限制时所有伤害递增。双方完成最后一回合后，以评分（资金＋残存部队＋占领地）决定胜负；平分时先手获胜。',
+    'help.t7': '操作',
+    'help.tab': '<table class="kv"><tr><th>操作</th><th>触屏</th><th>键盘</th></tr>' +
+      '<tr><td>选择／确认</td><td>点击</td><td>单击</td></tr>' +
+      '<tr><td>移动／缩放地图</td><td>拖动／双指</td><td>拖动／滚轮</td></tr>' +
+      '<tr><td>结束回合</td><td>按钮</td><td>空格 / Enter</td></tr>' +
+      '<tr><td>撤销</td><td>按钮</td><td>U / Esc</td></tr>' +
+      '<tr><td>全览</td><td>按钮</td><td>F</td></tr>' +
+      '<tr><td>规则／图鉴</td><td>MENU</td><td>H / C</td></tr>' +
+      '<tr><td>音效开关</td><td>顶部喇叭</td><td>M</td></tr></table>',
+
+    'cod.title': '武器图鉴',
+    'cod.land': '陆战装备',
+    'cod.air': '飞机与旋翼机',
+    'cod.terr': '地形',
+    'cod.locked': '尚未解锁',
+    'cod.avail': '可用',
+    'cod.cost': '造价',
+    'cod.move': '移动',
+    'cod.range': '射程',
+    'cod.atk': '火力',
+    'cod.hp': '生命',
+    'cod.ammo': '弹药',
+    'cod.fuel': '燃料',
+    'cod.cap': '占领',
+    'cod.yes': '可以',
+    'cod.no': '不能',
+    'cod.models': '现实装备',
+    'cod.mult': '伤害倍率',
+    'cod.terrainnote': '防御加成由受击方地形决定',
+
+    'cls.INF': '步兵',
+    'cls.SOFT': '轻装甲',
+    'cls.ARM': '重装甲',
+    'cls.AIR': '航空',
+    'dom.F': '步行',
+    'dom.W': '轮式',
+    'dom.T': '履带',
+    'dom.A': '航空',
+
+    'sel.none': '请点击部队',
+    'sel.mine': '点击绿色格移动，或点击敌军攻击',
+    'sel.after': '选择要攻击的目标',
+    'sel.target': '选择目标',
+    'sel.done': '该部队已行动',
+    'sel.enemy': '敌方部队',
+    'sel.nostop': '不能停在该格',
+    'sel.nomove': '燃料不足',
+    'sel.noammo': '弹药不足',
+    'sel.indirect': '间接火力不能攻击相邻格',
+    'sel.hint.tap': '先移动再攻击',
+    'sel.cantattack': '该武器不能攻击空中单位',
+
+    'fc.title': '火力预测',
+    'fc.dmg': '造成伤害 {n}',
+    'fc.counter': '遭到反击 {n}',
+    'fc.nocounter': '不会反击',
+    'fc.vs': '{a} → {b}',
+    'fc.terr': '地形防御 +{p}%',
+    'fc.go': '开火',
+
+    'a.wait': '待命',
+    'a.load': '装载',
+    'a.unload': '卸载',
+    'a.fort': '筑垒',
+    'a.depot': '建补给站',
+    'a.build': '生产',
+    'a.supply': '补给',
+
+    'build.title': '在{b}生产',
+    'build.pick': '选择装备',
+    'build.noFunds': '资金不足',
+    'build.noCap': '已达部队上限 {n}',
+    'build.locked': '未解锁',
+    'build.land': '工厂',
+    'build.air': '机场',
+    'build.out': '无法生产（被占用或已达上限）',
+    'build.need': '夺取生产设施以扩充',
+
+    'log.turn': '— 第{n}回合 {side} —',
+    'log.move': '{u} 移动到 {c}',
+    'log.attack': '{a} 攻击 {b} −{d}',
+    'log.counter': '反击 −{d}',
+    'log.ko': '{b} 被摧毁',
+    'log.noammo': '弹药耗尽：{a} 无法开火',
+    'log.cap': '占领 {p}',
+    'log.capp': '占领中 {p} {n}/{m}',
+    'log.build': '生产 {u} −{c}',
+    'log.buildno': '无法生产',
+    'log.income': '收入 +{n}（{p} 处据点）',
+    'log.supply': '{n} 支部队获得补给',
+    'log.starve': '补给中断 {n} 支部队',
+    'log.fort': '构筑工事',
+    'log.depot': '建成补给站 −{c}',
+    'log.load': '{a} 装入 {b}',
+    'log.unload': '在 {p} 卸载货物',
+    'log.hq': '本部还击 −{d}',
+    'log.designate': '无人机指示目标 +{p}%',
+    'log.win': '{s} 获胜！',
+    'log.lose': '{s} 战败…',
+    'log.timeout': '回合限制：评分 {a} 对 {b}',
+    'log.rout': '{s} 已无力抵抗',
+    'log.escalate': '战况升级 伤害 ×{m}',
+    'log.surrender': '已投降',
+
+    'res.win': '战役达成',
+    'res.lose': '战役失败',
+    'res.turns': '用时 {n} 回合',
+    'res.best': '最佳 {n} 回合',
+    'res.new': '新纪录！',
+    'res.ko': '击毁／损失 {a} 对 {b}',
+    'res.funds': '剩余资金 {n}',
+    'res.score': '评分 {n}',
+    'res.unlock': '解锁 {n}',
+    'res.rating': '评价',
+    'res.title': '战果',
+
+    'menu.title': '菜单',
+    'menu.save': '已自动保存',
+    'menu.quit': '返回标题',
+    'menu.quitq': '保存并返回标题画面？',
+
+    'obj.hq': '占领敌方本部',
+    'obj.hint': '夺取城市以增加收入与补给点',
+
+    'you': '蓝军',
+    'enemy': '红军',
+    'you.s': '蓝',
+    'enemy.s': '红',
+
+    'save.found': '发现存档',
+    'save.none': '无存档',
+    'save.written': '已保存至本机',
+    'save.warn': '本机无法使用存储，关闭后进度将丢失',
+
+    'tip.rotate': '建议横屏',
+    'tip.pan': '拖动或滚轮移动地图',
+    'tip.build': '点击工厂生产',
+    'tip.supply': '把补给车留在前线后方',
+    'tip.newstage': '解锁新战役',
+
+    'time.turn': 'T{n}',
+    'misc.vs': '对',
+    'misc.size': '{w}×{h}',
+    'misc.hp': '生命 {n}',
+    'misc.lock': '锁定',
+    'misc.pct': '{n}%',
+    'misc.captick': '占领 {n}/{m}'
+  }
+};
+
+
+/* ==== part p03_data.js ==== */
+/* ===== HEXFRONT :: data tables (terrain, units, pixel-art sprites) — DOM-free ===== */
+
+HF.SIDES = [0, 1];              /* 0 = player (BLUE), 1 = enemy (RED) */
+HF.SIDECOL = [
+  { d: '#17324f', m: '#2f6bad', l: '#74b4e8', w: '#cfe6f7' },
+  { d: '#4f1a1f', m: '#b03a3a', l: '#e8836f', w: '#f8d5cb' }
+];
+HF.CLASSES = ['INF', 'SOFT', 'ARM', 'AIR'];
+HF.DOMS = ['F', 'W', 'T', 'A'];
+
+/* ---------- terrain ----------
+   cost: movement points x10 per domain (x = impassable), def: defence pips,
+   inc: funds/turn when owned, cap: can be captured, sup: supply source,
+   build: production kind, flyCost: cost for aircraft                        */
+HF.TERR = {
+  PLAIN:    { n: { ja: '平野', en: 'Plain', zh: '平原' }, d: { ja: '見通しの良い開けた地', en: 'Open ground, no cover', zh: '开阔地，无掩体' }, cost: { F: 10, W: 10, T: 10 }, def: 0, inc: 0, cap: 0, sup: 0, fly: 5 },
+  ROAD:     { n: { ja: '道', en: 'Road', zh: '公路' }, d: { ja: '輪・履帯で高速移動', en: 'Fast for wheels and tracks', zh: '轮履高速通行' }, cost: { F: 10, W: 5, T: 6 }, def: 0, inc: 0, cap: 0, sup: 0, fly: 5 },
+  FOREST:   { n: { ja: '森', en: 'Forest', zh: '森林' }, d: { ja: '防御+3 車両はやや遅い', en: 'Def +3, slows vehicles', zh: '防御+3，车辆减速' }, cost: { F: 10, W: 16, T: 14 }, def: 3, inc: 0, cap: 0, sup: 0, fly: 5 },
+  HILL:     { n: { ja: '丘陵', en: 'Hill', zh: '丘陵' }, d: { ja: '防御+2 見晴らしの良い高台', en: 'Def +2, high ground', zh: '防御+2 高地' }, cost: { F: 14, W: 18, T: 14 }, def: 2, inc: 0, cap: 0, sup: 0, fly: 5 },
+  MOUNTAIN: { n: { ja: '山', en: 'Mountain', zh: '山地' }, d: { ja: '防御+4 車両は入れない', en: 'Def +4, vehicles blocked', zh: '防御+4，车辆不可通行' }, cost: { F: 16, W: -1, T: -1 }, def: 4, inc: 0, cap: 0, sup: 0, fly: 5 },
+  RIVER:    { n: { ja: '河', en: 'River', zh: '河流' }, d: { ja: '歩兵のみ渡れる(移動大)', en: 'Foot only, costly', zh: '仅步兵可渡（消耗大）' }, cost: { F: 24, W: -1, T: -1 }, def: 0, inc: 0, cap: 0, sup: 0, fly: 5 },
+  BRIDGE:   { n: { ja: '橋', en: 'Bridge', zh: '桥梁' }, d: { ja: '車両が河を渡れる唯一の道', en: 'Only way for vehicles across', zh: '车辆过河的通道' }, cost: { F: 10, W: 10, T: 10 }, def: 0, inc: 0, cap: 0, sup: 0, fly: 5 },
+  LAKE:     { n: { ja: '湖', en: 'Lake', zh: '湖泊' }, d: { ja: '航空機のみ通過', en: 'Aircraft only', zh: '仅航空机通过' }, cost: { F: -1, W: -1, T: -1 }, def: 0, inc: 0, cap: 0, sup: 0, fly: 5 },
+  CITY:     { n: { ja: '都市', en: 'City', zh: '城市' }, d: { ja: '収入5・補給・占領可', en: 'Income 5, supply, capture', zh: '收入5·补给·可占领' }, cost: { F: 10, W: 10, T: 10 }, def: 2, inc: 5, cap: 2, sup: 1, fly: 5 },
+  FARM:     { n: { ja: '農場', en: 'Farm', zh: '农场' }, d: { ja: '収入3・補給・占領可', en: 'Income 3, supply, capture', zh: '收入3·补给·可占领' }, cost: { F: 10, W: 10, T: 10 }, def: 0, inc: 3, cap: 2, sup: 1, fly: 5 },
+  AIRFIELD: { n: { ja: '飛行場', en: 'Airfield', zh: '机场' }, d: { ja: '航空機を生産・収入4', en: 'Builds aircraft, income 4', zh: '生产飞机·收入4' }, cost: { F: 8, W: 8, T: 8 }, def: 1, inc: 4, cap: 2, sup: 1, build: 'AIR', fly: 5 },
+  FACTORY:  { n: { ja: '軍需工場', en: 'Factory', zh: '军工厂' }, d: { ja: '陸上兵器を生産・収入7', en: 'Builds land weapons, income 7', zh: '生产陆军·收入7' }, cost: { F: 8, W: 8, T: 8 }, def: 1, inc: 7, cap: 2, sup: 1, build: 'LAND', fly: 5 },
+  DEPOT:    { n: { ja: '補給基地', en: 'Depot', zh: '补给站' }, d: { ja: '補給点・収入3・占領可', en: 'Supply point, income 3', zh: '补给点·收入3' }, cost: { F: 10, W: 10, T: 10 }, def: 1, inc: 3, cap: 2, sup: 1, fly: 5 },
+  HQ:       { n: { ja: '本営', en: 'HQ', zh: '本部' }, d: { ja: '占領で勝利・収入4・応戦', en: 'Capture to win, income 4, returns fire', zh: '占领即胜·收入4·还击' }, cost: { F: 10, W: 10, T: 10 }, def: 3, inc: 4, cap: 3, sup: 1, fly: 5 },
+  FORT:     { n: { ja: '陣地', en: 'Field works', zh: '工事' }, d: { ja: '防御+4 工兵が構築', en: 'Def +4, dug by engineers', zh: '防御+4 工兵构筑' }, cost: { F: 10, W: 10, T: 10 }, def: 4, inc: 0, cap: 0, sup: 0, fly: 5 }
+};
+
+/* ---------- units: real modern systems ----------
+   atk: base damage (HP is 0..100), mul: matchup vs class, r0/r1 range,
+   ammo: shots with its ammo-fed weapon (-1 = small arms, unlimited),
+   car: cargo slots, cld: class it may carry, ind: indirect (no counterfire)  */
+HF.UNITS = {
+  RIFLE: {
+    n: { ja: '歩兵小隊', en: 'Rifle squad', zh: '步兵班' }, s: 'RIF',
+    d: { ja: '占領の要。少銃で近接戦闘', en: 'The capture arm. Rifles and grenades', zh: '占领主力，步枪近战' },
+    models: 'M4A1 / HK416 / AK-12 / 95式', cls: 'INF', dom: 'F', sp: 'inf', tier: 1, build: 'LAND',
+    cost: 5, mv: 3, r0: 1, r1: 1, atk: 42, ammo: -1, fuel: 40, cap: 1, car: 0, cld: null, ind: 0,
+    mul: { INF: 1.0, SOFT: 0.9, ARM: 0.3, AIR: 0.15 }
+  },
+  MG: {
+    n: { ja: '重機関銃班', en: 'HMG team', zh: '重机枪组' }, s: 'HMG',
+    d: { ja: '射程2の抑制火力。低空飛行機も撃てる', en: 'Range-2 base of fire, hits low flyers', zh: '射程2压制火力，可打低空飞机' },
+    models: 'M240B / PKP Pecheneg / CS/LM5', cls: 'INF', dom: 'F', sp: 'mg', tier: 1, build: 'LAND',
+    cost: 7, mv: 2, r0: 1, r1: 2, atk: 58, ammo: 8, fuel: 36, cap: 1, car: 0, cld: null, ind: 0,
+    mul: { INF: 1.3, SOFT: 1.1, ARM: 0.35, AIR: 0.5 }
+  },
+  ATGM: {
+    n: { ja: '対戦車ミサイル', en: 'ATGM team', zh: '反坦克导弹' }, s: 'ATG',
+    d: { ja: '戦車を射程2で撃破。歩兵に弱い', en: 'Tank killer at range 2, soft vs infantry', zh: '射程2反坦克，怕步兵' },
+    models: 'FGM-148 Javelin / Kornet-M / 紅箭-12', cls: 'INF', dom: 'F', sp: 'atgm', tier: 2, build: 'LAND',
+    cost: 9, mv: 2, r0: 1, r1: 2, atk: 46, ammo: 4, fuel: 36, cap: 1, car: 0, cld: null, ind: 0,
+    mul: { INF: 0.5, SOFT: 1.5, ARM: 2.0, AIR: 0.55 }
+  },
+  ENG: {
+    n: { ja: '戦闘工兵', en: 'Combat engineer', zh: '战斗工兵' }, s: 'ENG',
+    d: { ja: '陣地・補給基地を構築できる', en: 'Digs field works and builds depots', zh: '可筑工事与补给站' },
+    models: 'M728 ACE / Pioniere / 工兵化復旧車', cls: 'INF', dom: 'F', sp: 'eng', tier: 2, build: 'LAND',
+    cost: 6, mv: 2, r0: 1, r1: 1, atk: 24, ammo: -1, fuel: 40, cap: 1, car: 0, cld: null, ind: 0, fort: 6, depot: 10,
+    mul: { INF: 0.8, SOFT: 0.6, ARM: 0.2, AIR: 0.1 }
+  },
+  TRUCK: {
+    n: { ja: '補給トラック', en: 'Supply truck', zh: '补给卡车' }, s: 'SUP',
+    d: { ja: '隣接部隊の燃料と弾薬を補給', en: 'Resupplies adjacent units', zh: '为相邻部队补给了弹燃料' },
+    models: 'FMTV M1078 / KamAZ-5350 / MB Actros', cls: 'SOFT', dom: 'W', sp: 'truck', tier: 1, build: 'LAND',
+    cost: 5, mv: 4, r0: 1, r1: 1, atk: 8, ammo: -1, fuel: 90, cap: 0, car: 0, cld: null, ind: 0, supply: 1,
+    mul: { INF: 0.2, SOFT: 0.2, ARM: 0.05, AIR: 0 }
+  },
+  APC: {
+    n: { ja: '装甲兵員車', en: 'APC', zh: '装甲运兵车' }, s: 'APC',
+    d: { ja: '步兵1名を輸送。装甲は薄い', en: 'Carries 1 infantry, thin skin', zh: '载1名步兵，装甲薄' },
+    models: 'M113A4 / BTR-82A / Boxer ARTEC / 08式', cls: 'SOFT', dom: 'W', sp: 'apc', tier: 1, build: 'LAND',
+    cost: 8, mv: 4, r0: 1, r1: 1, atk: 26, ammo: 6, fuel: 80, cap: 0, car: 1, cld: 'INF', ind: 0,
+    mul: { INF: 0.8, SOFT: 0.9, ARM: 0.25, AIR: 0.35 }
+  },
+  IFV: {
+    n: { ja: '歩兵戦車', en: 'Infantry fighting vehicle', zh: '步兵战车' }, s: 'IFV',
+    d: { ja: '高速の砲兵戦車。步兵1名搭載', en: 'Fast cannon IFV, carries 1 infantry', zh: '高速步战，载1名步兵' },
+    models: 'M2A4 Bradley / BMP-3 / Warrior / 04式', cls: 'ARM', dom: 'T', sp: 'ifv', tier: 3, build: 'LAND',
+    cost: 13, mv: 4, r0: 1, r1: 1, atk: 62, ammo: 7, fuel: 80, cap: 0, car: 1, cld: 'INF', ind: 0,
+    mul: { INF: 1.2, SOFT: 1.5, ARM: 0.9, AIR: 0.9 }
+  },
+  MBT: {
+    n: { ja: '主力戦車', en: 'Main battle tank', zh: '主战坦克' }, s: 'MBT',
+    d: { ja: '戦場の拳。歩兵には手強く対ミサイルに弱い', en: 'Battlefield fist, tough to ground ATGM', zh: '战场铁拳，怕反坦克导弹' },
+    models: 'M1A2 SEPv3 / Leopard 2A8 / 99A式 / Leclerc', cls: 'ARM', dom: 'T', sp: 'mbt', tier: 4, build: 'LAND',
+    cost: 20, mv: 4, r0: 1, r1: 1, atk: 84, ammo: 6, fuel: 80, cap: 0, car: 0, cld: null, ind: 0,
+    mul: { INF: 0.85, SOFT: 1.6, ARM: 1.05, AIR: 0.25 }
+  },
+  SPART: {
+    n: { ja: '自走砲', en: 'Self-propelled howitzer', zh: '自行火炮' }, s: 'SPA',
+    d: { ja: '射程2-3の間接砲。反撃されない', en: 'Range 2-3 indirect, no counterfire', zh: '射程2-3间接火力，免反击' },
+    models: 'M109A7 / PzH 2000 / K9 Thunder / PLZ-05', cls: 'SOFT', dom: 'T', sp: 'spart', tier: 3, build: 'LAND',
+    cost: 15, mv: 3, r0: 2, r1: 3, atk: 76, ammo: 5, fuel: 70, cap: 0, car: 0, cld: null, ind: 1,
+    mul: { INF: 1.1, SOFT: 1.4, ARM: 1.0, AIR: 0 }
+  },
+  MLRS: {
+    n: { ja: '多連装ロケット', en: 'MLRS', zh: '多管火箭炮' }, s: 'MLR',
+    d: { ja: '射程3-4の重火力。弾薬はわずか', en: 'Range 3-4 heavy salvo, tiny ammo', zh: '射程3-4重火力，弹药少' },
+    models: 'M270A2 / HIMARS / BM-30 Smerch / PHL-16', cls: 'SOFT', dom: 'W', sp: 'mlrs', tier: 5, build: 'LAND',
+    cost: 24, mv: 3, r0: 3, r1: 4, atk: 90, ammo: 3, fuel: 70, cap: 0, car: 0, cld: null, ind: 1,
+    mul: { INF: 1.2, SOFT: 1.6, ARM: 1.1, AIR: 0 }
+  },
+  AAA: {
+    n: { ja: '自対空機関砲', en: 'Self-propelled AAA', zh: '自行高炮' }, s: 'AAA',
+    d: { ja: '低空の航空機を射撃で落とす', en: 'Shreds low fliers with flak', zh: '炮击落低空飞机' },
+    models: 'Gepard / PGZ-09 / Tunguska / Skyranger', cls: 'ARM', dom: 'T', sp: 'aaa', tier: 4, build: 'LAND',
+    cost: 11, mv: 4, r0: 1, r1: 2, atk: 52, ammo: 10, fuel: 80, cap: 0, car: 0, cld: null, ind: 0,
+    mul: { INF: 0.5, SOFT: 0.6, ARM: 0.35, AIR: 2.0 }
+  },
+  SAM: {
+    n: { ja: '地対空ミサイル', en: 'SAM battery', zh: '地空导弹' }, s: 'SAM',
+    d: { ja: '射程3で航空機を専ら狙う。地上は不可', en: 'Range-3 air-only killer', zh: '射程3专打飞机，不能对地' },
+    models: 'MIM-104 Patriot / IRIS-T SLM / S-300V / HQ-9', cls: 'SOFT', dom: 'W', sp: 'sam', tier: 5, build: 'LAND',
+    cost: 16, mv: 3, r0: 1, r1: 3, atk: 58, ammo: 7, fuel: 70, cap: 0, car: 0, cld: null, ind: 0,
+    mul: { INF: 0, SOFT: 0, ARM: 0, AIR: 2.6 }
+  },
+  CH: {
+    n: { ja: '輸送ヘリ', en: 'Transport helicopter', zh: '运输直升机' }, s: 'TRH',
+    d: { ja: '步兵2名を戦線後方へ空輸', en: 'Air-lifts 2 infantry across the front', zh: '机降2名步兵' },
+    models: 'CH-47F / Mi-8AMTSh / UH-60M / Z-20', cls: 'AIR', dom: 'A', sp: 'ch', tier: 6, build: 'AIR',
+    cost: 10, mv: 6, r0: 1, r1: 1, atk: 22, ammo: 6, fuel: 90, cap: 0, car: 2, cld: 'INF', ind: 0,
+    mul: { INF: 0.6, SOFT: 0.6, ARM: 0.15, AIR: 0 }
+  },
+  UAV: {
+    n: { ja: '攻撃無人機', en: 'Armed UAV', zh: '攻击无人机' }, s: 'UAV',
+    d: { ja: '味方の射程内火力を+18%にする', en: 'Designates: allies near it hit +18%', zh: '指示目标：附近友军火力+18%' },
+    models: 'MQ-9A Reaper / TB2 Bayraktar / Wing Loong II', cls: 'AIR', dom: 'A', sp: 'uav', tier: 6, build: 'AIR',
+    cost: 11, mv: 5, r0: 1, r1: 2, atk: 44, ammo: 3, fuel: 100, cap: 0, car: 0, cld: null, ind: 0, desig: 2,
+    mul: { INF: 1.1, SOFT: 1.3, ARM: 1.0, AIR: 0 }
+  },
+  AH: {
+    n: { ja: '攻撃ヘリ', en: 'Attack helicopter', zh: '武装直升机' }, s: 'HTD',
+    d: { ja: '戦車 hunt。高射砲とSAMに注意', en: 'Tank hunter, afraid of AAA and SAM', zh: '猎杀坦克，惧高炮与地空导弹' },
+    models: 'AH-64E Apache / Ka-52 / Tiger / Z-10', cls: 'AIR', dom: 'A', sp: 'ah', tier: 6, build: 'AIR',
+    cost: 19, mv: 6, r0: 1, r1: 2, atk: 70, ammo: 5, fuel: 90, cap: 0, car: 0, cld: null, ind: 0,
+    mul: { INF: 1.3, SOFT: 1.6, ARM: 1.5, AIR: 0.4 }
+  },
+  FT: {
+    n: { ja: '戦闘機', en: 'Fighter', zh: '战斗机' }, s: 'FTR',
+    d: { ja: '制空権の主。対空で圧倒', en: 'Air superiority king', zh: '制空权主宰，对空压倒' },
+    models: 'F-16C Block70 / JAS 39E Gripen / J-10C / Rafale', cls: 'AIR', dom: 'A', sp: 'ft', tier: 7, build: 'AIR',
+    cost: 25, mv: 8, r0: 1, r1: 1, atk: 68, ammo: 4, fuel: 110, cap: 0, car: 0, cld: null, ind: 0,
+    mul: { INF: 0.7, SOFT: 0.8, ARM: 0.6, AIR: 2.2 }
+  },
+  BJ: {
+    n: { ja: '戦闘爆撃機', en: 'Strike fighter', zh: '战斗轰炸机' }, s: 'STR',
+    d: { ja: '地上目標を高精度誘導弾で壊す', en: 'Precision ordnance against ground targets', zh: '精确弹药摧毁地面目标' },
+    models: 'F-35A / Su-34 / JH-7A / JF-17 Block III', cls: 'AIR', dom: 'A', sp: 'bj', tier: 8, build: 'AIR',
+    cost: 27, mv: 7, r0: 1, r1: 1, atk: 92, ammo: 3, fuel: 110, cap: 0, car: 0, cld: null, ind: 0,
+    mul: { INF: 1.4, SOFT: 1.6, ARM: 1.4, AIR: 0.4 }
+  }
+};
+HF.UIDS = Object.keys(HF.UNITS);
+
+/* engineer support actions */
+HF.FORT_COST = 6;
+HF.DEPOT_COST = 10;
+
+/* ---------- pixel art ---------- */
+/* palette: '.' transparent, then single chars below */
+HF.PAL = {
+  K: '#0b1016', D: 'TEAM_D', M: 'TEAM_M', L: 'TEAM_L',
+  s: '#3a424c', S: '#6d7883', W: '#a9b4bf', h: '#dde5ec',
+  g: '#3c4a2c', G: '#5f7040', Y: '#8b9b5c',
+  r: '#a83a2c', y: '#e0b73c', w: '#f0f4f7', k: '#1a2027',
+  n: '#c79c68', o: '#8a5a2b', b: '#2b4a6b', e: '#78d0e8'
+};
+/* sprite rows joined by '/'. team chars D/M/L are tinted per side. */
+HF.ART = {
+  inf: '......./......../...KKKK...../..KgGGgK.../../..KnGGnK.../../...KMMK...K/..KMMLMKKKK/..KMMMK.KK.../...KKKKKKK..../...KMMMK...../...KMMK....../....KK.KK.../...KggKggK../...KggKggK../....KKKK..../........',
+  mg: '......./......../..KKKKKKK../..KMMMMMK../..KMLLLLMK../..KMMMMMK.../...KK.KKKKKKKKKKK/..KsKK......./..KsK.KKKK../..KK..KsK.../......KsK.../.....KsKK.../....KsK...../...KK.......',
+  atgm: '......./......../...KKKK...../..KgGGgK.../../..KnGGnK.../...KMMKKKKKKKKKKKK/..KMMLMKn...../...KKKKKssssss../......KMMK.../......KMMK.../.......KK.../.....KggKggK/.....KggKggK/......KKKK../........',
+  eng: '......./......../...KKKK...../..KYYYYYK.../..KnYYnYK.../...KMMMK.../..KMMLMMK.y../...KKKKKk.y../...KMMMK..y../...KMMK...y../....KK..yyyy/...KggKggK.y/...KggKggK../....KKKK..../........',
+  truck: '............../............../......KKKKK...../.....KMMMhKK..../.....KMMLMhK....K/.....KMMMMKK...K/..KKKKKKKKKKKKKKK/..KMMMMMMMMMMMMK/..KMLMMMMMMMMK/..KKsKKKKKKsKKK/..KsKKK...KsKK/..KKK.....KKK../............./............',
+  apc: '................/................/....KKKKKKKKK..../...KMMMMMMMMMK../...KMLLLMMMhhK../...KMMMMMMMMMKK/..KsKKKKKKKKKKsK/..KssssssssssssK/..KKsKKKKKKKsKK/...KKKKKKKKK..../................/..............',
+  ifv: '................../................../.......KKKKKKKK......../......KMMMMMMMK...../......KMMLLLMMKhK.../......KMMMMMMMKK../KKKKKKKKKKKKKKKKK/................./KssssssssssssssssK/KKsKKKKKKKKKKKsKK/..KssssssssssssK/...KKKKKKKKKKK..',
+  mbt: '...................../...................../..........KKKKKKK........../.........KMMMMMMMK........./.........KMMLLLMMMK........./..........KMMMMMMMK........./KKKKKKKKKKKKKKKKKKKKKK/........................./KssssssssssssssssssssK/KKsKKKKKKKKKKKKKsKK/..KssssssssssssssK/....KKKKKKKKKKKK....',
+  spart: '................../................../...........Kkkkk........./..........KkKKKk........../.........KkKKKkK........./........KkKKkkKKK........./.....KKKKKKKKKKKKKKK...../.....KMMMMMMMMMMMK...../.....KMMLLMMMMMMMK...../..KssssssssssssssssssK/..KKsKKKKKKKKKKKsKKK/...KsssssssssssK../....KKKKKKKKKKK....',
+  mlrs: '...................../...................../..........KKKKKKKKKK........./.........KLLLLLLLLLKK........./.........KkkkkkkkkKKK........./.........KLLLLLLLLLKKK......../..........KKKKKKKKK............/.....KKKKKKKKKKKKKKKKK...../.....KMMMMMMMMMMMMMMMK...../.....KMLMMMMMMMMMMMK...../..KssssssssssssssssssssK/..KKsKKKKKKKKKKKKKsKKK/...KsssssssssssssssK/....KKKKKKKKKKKKKK....',
+  aaa: '................../................../Kk..Kk....Kk..Kk......./..Kkkkkkkkkkkkkk......../.....KMMMMMMMK........./.....KMMLLLMMMK........./......KMMMMMMMK........./...KKKKKKKKKKKKKKK..../...KssssssssssssK.../...KKsKKKKKKKsKKK..../....KssssssssK.../.....KKKKKKKK....',
+  sam: '...................../...................../....KKKK.....KKKK.....K/....KLLLK.....KLLLK.....K/....KLLLK.....KLLLK.....K/....KKKKK.....KKKKK.....K/......KKKKKKKKKKK...../.....KKKKKKKKKKKKKKKKK...../.....KMMMMMMMMMMMMMK...../.....KMLMMMMMMMMMMK...../..KssssssssssssssssssK/..KKsKKKKKKKKKKKsKKK/...KsssssssssssK../....KKKKKKKKKKK....',
+  ch: '............................/KKKKKKKKKKKKKKKKKKKKKKKKK/............................/.......KKKKKKKKK................../......KMMMMLLMMMK................/.....KMMMMMMMMMMMKK............./.....KMMLLLLLMMMMMhKK............/......KMMMMMMMMMMMKK........./.......KKsKKKKKKKKKsKK........../...........KsKKK................/..........KKKKK.................',
+  uav: '............................................/............................................/..................KK............................................/.................KMMK........................................./..............KMMMMK............................................/............KKMMMMMMKK......................................./KKKKKKKKKKKKKKMMMMMMMMKKKKKKKKKKKKKKKKKKKKKKK/............KKMMMMMMKK......................................./..............KMMMMK............................................/.................KMMK........................................./..................KK............................................/................KeeK..........................................',
+  ah: '..................................../........KKKKK................................/.......KMMMMMK............................./......KMMMMMMhKK.........................../.....KMMMMMMMMMKKKKKK....................KKKK/....KMMLLLMMMMMMhK.....................KLLLK/.....KMMMMMMMMMKKKKKK....................KKKK/......KMMMMMMhKK.........................../.......KKKKKKK............................./........KsK..................................../.......KssK.................................../......KKKKKKK..................................',
+  ft: '...................................................../...................................................../...................................................../................................KK........................../.............................KMK........................./............................KMMMK......................../..........KKKKKKKKKKKKKKKKKMMMMMKKKKKKKKKKKKKKKKK........./............................KMMMK......................../.............................KMK........................./................................KK........................../...................................................../...................................................../.....................................................',
+  bj: '........................................................./........................................................./........................................................./...................................KKKK................................/..................................KMMMMK.............................../................................KMMMMMK.............................../................KKKKKKKKKKKKKKKKKKMMMMMMMKKKKKKKKKKKKKKKK................./................................KMMMMMK................................/..................................KMMMMK.............................../...................................KKKK................................/........................................................./........................................................./........................................................./.........................................................',
+  city: '...../...../KKKKKKKKKKKKKKK/KMMMMMMMMMMMMMMK/KhKKhhKKhhKKhhK/KMMMMMMMMMMMMMMK/KhKKhhKKhhKKhhK/KMMMMMMMMMMMMMMK/KhKKhhKKhhKKhhK/KMMMMMMMMMMMMMMK/KMMMMMMMMMMMMMMK/KKLLLLLLLLLLLLK/..............',
+  farm: '................/................/..KKKKKKK...../..KrrrrrrK..../..KrwKrwK...../..KKKKKKKKK..../..KYYYYYYYYKK/..KYYKYYYYK/..KKKKKKKKK.',
+  factory: '................/................/....KKK...../....KsK...../....KsK...../KKKKKKKKKKKKKKK/KMMMMMMMMMMMMK/KhKMMhKMMhKMM/KMMMMMMMMMMMM/KLLLLLLLLLLLL/KKsKsKsKsKsKK/',
+  hangar: '................/................/....KKKKKK..../..KKMMMMMMKK../.KMMMMMMMMMK./.KMLLMMMMMMK./.KMMMMMMMMMK./KKKKKKKKKKKKK/..............',
+  depot: '................/................/....KKKKK...../....KYYYYK..../....KYKKYK...../..KKKKKKKKKKK../..KYYYYYYYYK../..KYKLLLKYK../..KYYYYYYYYK../..KKKKKKKKKKK.',
+  hq: '..................../....KwK................/....KwwK................/....KMMK................/KKKKKKKKKKKKKKKKK/KMMMMMMMMMMMMMK/KMMLLLMMMMMMK/KMMMMMMMMMMMK/KMMMMMMMMMMMK/KLLLLLLLLLLLLK/KKsKsKsKsKsKK/',
+  tree: '...KKK.../..KGGgK../.KgGGGgK./.KGGgGGgK./KGGGGGGgK/.KgGGGGgK./...KooK.../...KooK.../..KKKKKKK..',
+  rock: '...KKK.../..KWWWK../.KWWWWWK../KWSSSWWK./KSSSSSSWK./KSSSSSWK./KKKKKKKKK',
+  bump: '..KKK../.KWWWK./KWSSWK./KSSSWK./KKKKKK.',
+  boom0: '................../.......KKK......../.....KKyyyyKK...../....KyyyyyyyK....../...KyyYYyyyK...../...KyYYWWYYk....../..KkYYWWWWYk....../..KkYWWWWWYk....../..KkYYWWYYk...../...KyyYYyyK......../....KyyyyyK......../.....KKyyKK........./.......KKK........../..................',
+  boom1: '................../................../......KKKKK......../.....KYYYYYK......./....KYWWWWWYK....../...KYWWWWWYk...../...KYWKKKWYk...../...KYWKKKWYk...../...KYWKKKWYk...../....KYWWWWYK......./.....KYYYYYK......./......KKKKK........./................../..................',
+  boom2: '................../................../................../......KKKKK......../.....KsSSsK......../....KsK..KsK......./....Ks.KK.Ks......./....KsK..KsK......./.....KsSSsK......../......KKKKK........./................../................../..................'
+};
+HF.SPR = {};              /* baked canvases: key+side -> canvas */
+HF.SPRW = 17; HF.SPRH = 16;
+
+/* ---------- shared combat helpers (pure) ---------- */
+HF.canHit = function (au, tu) {
+  var A = HF.UNITS[au.t], T = HF.UNITS[tu.t];
+  return (A.mul[T.cls] || 0) > 0;
+};
+HF.inRange = function (s, au, tu, from) {
+  var A = HF.UNITS[au.t];
+  var d = HF.distIdx(s, from === undefined ? au.i : from, tu.i);
+  return d >= A.r0 && d <= A.r1;
+};
+
+
+/* ==== part p04_stages.js ==== */
+/* ===== HEXFRONT :: operations (stages) + map generator — DOM-free ===== */
+/* Every stage is deterministic: same seed -> same map, so a stage is a designed
+   battle you can retry. Maps grow from 15x9 to 37x16.                       */
+
+HF.STAGES = [
+  { id: 1, sz: [15, 9], seed: 1207, theme: 'plain', tiers: 1, funds: 30, cap: 6, limit: 20,
+    n: { ja: '初接触', en: 'First Contact', zh: '初次接触' },
+    b: { ja: '開けた平野の小競り合い。都市を占領し歩兵を量産せよ', en: 'Open plain skirmish. Take the town, churn out rifles.', zh: '开阔平原小接触，夺城并量产步兵' },
+    props: { city: 2, farm: 2, air: 0, depot: 1 }, ownPairs: 1,
+    start: ['RIFLE', 'RIFLE', 'RIFLE', 'MG', 'APC'] },
+
+  { id: 2, sz: [17, 10], seed: 8842, theme: 'river', tiers: 2, funds: 45, cap: 8, limit: 22,
+    n: { ja: '河の渡河点', en: 'River Crossing', zh: '渡河点' },
+    b: { ja: '河が戦線を分断。橋か徒渉を確保しろ', en: 'A river splits the field. Hold the bridges or wade.', zh: '河流分割战线，控制桥梁或徒涉' },
+    props: { city: 3, farm: 2, air: 0, depot: 1 }, ownPairs: 1,
+    start: ['RIFLE', 'RIFLE', 'RIFLE', 'MG', 'ATGM', 'APC', 'TRUCK'] },
+
+  { id: 3, sz: [19, 10], seed: 4419, theme: 'forest', tiers: 2, funds: 60, cap: 10, limit: 25,
+    n: { ja: '森の待ち伏せ', en: 'Forest Ambush', zh: '森林伏击' },
+    b: { ja: '森が多く防御側が有利。工兵で補給基地を作れ', en: 'Many forests favour the defender. Engineers build depots.', zh: '森林利于防守，工兵建补给站' },
+    props: { city: 3, farm: 3, air: 0, depot: 1 }, ownPairs: 1,
+    start: ['RIFLE', 'RIFLE', 'RIFLE', 'MG', 'ATGM', 'ENG', 'APC', 'TRUCK'] },
+
+  { id: 4, sz: [21, 11], seed: 1731, theme: 'mountain', tiers: 3, funds: 80, cap: 12, limit: 28,
+    n: { ja: '山岳の峠道', en: 'Mountain Pass', zh: '山岳隘口' },
+    b: { ja: '山が車両を分断する。峠を抜けて自走砲を前に', en: 'Ridges split the armour. Break the pass, push SP guns.', zh: '山地分隔车辆，打通隘口推进自行火炮' },
+    props: { city: 3, farm: 3, air: 0, depot: 2 }, ownPairs: 1,
+    start: ['RIFLE', 'RIFLE', 'RIFLE', 'RIFLE', 'MG', 'ATGM', 'ENG', 'APC', 'TRUCK', 'IFV'] },
+
+  { id: 5, sz: [23, 11], seed: 6604, theme: 'desert', tiers: 4, funds: 100, cap: 14, limit: 30,
+    n: { ja: '砂漠の補給路', en: 'Desert Convoy Route', zh: '沙漠补给线' },
+    b: { ja: '道が速い。戦車と高射砲を道沿いに走らせろ', en: 'Roads are fast. Run tanks and AAA along them.', zh: '公路高速，沿路投入坦克与高炮' },
+    props: { city: 4, farm: 2, air: 0, depot: 2 }, ownPairs: 2,
+    start: ['RIFLE', 'RIFLE', 'RIFLE', 'RIFLE', 'MG', 'ATGM', 'ENG', 'APC', 'TRUCK', 'IFV', 'MBT', 'SPART'] },
+
+  { id: 6, sz: [25, 12], seed: 3358, theme: 'coast', tiers: 5, funds: 120, cap: 16, limit: 32,
+    n: { ja: '海岸の飛行場', en: 'Coastal Airfield', zh: '海岸机场' },
+    b: { ja: '湖と入江。飛行場を占領すれば航空機が使える', en: 'Lakes and inlets. Take the airfield to fly.', zh: '湖泊与海湾，夺机场用飞机' },
+    props: { city: 4, farm: 3, air: 2, depot: 2 }, ownPairs: 2,
+    start: ['RIFLE', 'RIFLE', 'RIFLE', 'RIFLE', 'MG', 'ATGM', 'ENG', 'APC', 'TRUCK', 'IFV', 'MBT', 'SPART', 'AAA', 'SAM'] },
+
+  { id: 7, sz: [27, 12], seed: 9902, theme: 'woodriver', tiers: 5, funds: 145, cap: 18, limit: 34,
+    n: { ja: '二つの河', en: 'Twin Rivers', zh: '两条河流' },
+    b: { ja: '二条の河と森。渡河の度に対戦車ミサイルが効く', en: 'Two rivers, woods on the far bank. ATGM rules the bridges.', zh: '两条河与森林，桥头反坦克导弹称王' },
+    props: { city: 5, farm: 3, air: 1, depot: 2 }, ownPairs: 2,
+    start: ['RIFLE', 'RIFLE', 'RIFLE', 'RIFLE', 'MG', 'MG', 'ATGM', 'ATGM', 'ENG', 'APC', 'TRUCK', 'IFV', 'SPART', 'MBT', 'MBT', 'AAA', 'SAM'] },
+
+  { id: 8, sz: [29, 13], seed: 2276, theme: 'urban', tiers: 6, funds: 170, cap: 19, limit: 36,
+    n: { ja: '市街地攻防', en: 'Urban Assault', zh: '城市攻防' },
+    b: { ja: '都市が多い市街戦。歩兵で家々を占領せよ', en: 'City sprawl: infantry take house by house.', zh: '城市密集巷战，步兵逐屋占领' },
+    props: { city: 6, farm: 3, air: 1, depot: 2 }, ownPairs: 2,
+    start: ['RIFLE', 'RIFLE', 'RIFLE', 'RIFLE', 'RIFLE', 'MG', 'MG', 'ATGM', 'ATGM', 'ENG', 'APC', 'APC', 'TRUCK', 'IFV', 'SPART', 'MBT', 'MBT', 'AAA'] },
+
+  { id: 9, sz: [31, 13], seed: 5527, theme: 'delta', tiers: 6, funds: 200, cap: 20, limit: 38,
+    n: { ja: '三角洲の防衛線', en: 'Delta Defence Line', zh: '三角洲防线' },
+    b: { ja: '入り組んだ水網。ヘリと无人机で機動せよ', en: 'Broken waterways. Lift with helicopters and drones.', zh: '水网复杂，用直升机与无人机机动' },
+    props: { city: 6, farm: 4, air: 2, depot: 3 }, ownPairs: 3,
+    start: ['RIFLE', 'RIFLE', 'RIFLE', 'RIFLE', 'MG', 'ATGM', 'ATGM', 'ENG', 'APC', 'APC', 'TRUCK', 'IFV', 'SPART', 'MBT', 'MBT', 'AAA', 'SAM', 'AH'] },
+
+  { id: 10, sz: [33, 14], seed: 7188, theme: 'desert', tiers: 7, funds: 230, cap: 21, limit: 42,
+    n: { ja: '砂漠の激突', en: 'Desert Clash', zh: '沙漠会战' },
+    b: { ja: '開いた砂漠。戦闘機が制空権を握る', en: 'Wide open sand. Fighters decide who owns the sky.', zh: '辽阔沙漠，战斗机决定制空权' },
+    props: { city: 6, farm: 4, air: 3, depot: 3 }, ownPairs: 3,
+    start: ['RIFLE', 'RIFLE', 'RIFLE', 'RIFLE', 'MG', 'ATGM', 'ATGM', 'ENG', 'APC', 'TRUCK', 'TRUCK', 'IFV', 'IFV', 'SPART', 'MBT', 'MBT', 'AAA', 'SAM', 'MLRS', 'FT'] },
+
+  { id: 11, sz: [35, 15], seed: 3019, theme: 'mountain', tiers: 7, funds: 260, cap: 22, limit: 46,
+    n: { ja: '山岳要塞', en: 'Mountain Fortress', zh: '山地要塞' },
+    b: { ja: '山塊に築かれた要塞。歩兵と砲で削れ', en: 'Fortress of rock. Grind it with infantry and artillery.', zh: '山地筑垒，以步兵与炮火消耗' },
+    props: { city: 7, farm: 4, air: 2, depot: 3 }, ownPairs: 3,
+    start: ['RIFLE', 'RIFLE', 'RIFLE', 'RIFLE', 'RIFLE', 'MG', 'MG', 'ATGM', 'ATGM', 'ENG', 'ENG', 'APC', 'TRUCK', 'TRUCK', 'IFV', 'SPART', 'SPART', 'MBT', 'MBT', 'AAA', 'SAM', 'AH'] },
+
+  { id: 12, sz: [37, 16], seed: 1111, theme: 'final', tiers: 8, funds: 300, cap: 24, limit: 52,
+    n: { ja: '最終攻勢', en: 'Final Offensive', zh: '最终攻势' },
+    b: { ja: '全戦域の決戦。陸と空の全兵器で本営を捉えろ', en: 'The decisive battle: every system, land and air, for the HQ.', zh: '全域决战，陆空全部兵器直取本部' },
+    props: { city: 8, farm: 5, air: 3, depot: 3 }, ownPairs: 3,
+    start: ['RIFLE', 'RIFLE', 'RIFLE', 'RIFLE', 'MG', 'MG', 'ATGM', 'ATGM', 'ATGM', 'ENG', 'ENG', 'APC', 'APC', 'TRUCK', 'TRUCK', 'IFV', 'SPART', 'MBT', 'MBT', 'AAA', 'SAM', 'MLRS', 'AH', 'BJ'] }
+];
+
+HF.stage = function (i) { return HF.STAGES[i]; };
+HF.diffMods = {
+  easy: { funds: 0.65, inc: 0.8, blunder: 0.28, aggro: 0.85 },
+  normal: { funds: 1.0, inc: 1.0, blunder: 0.10, aggro: 1.0 },
+  hard: { funds: 1.3, inc: 1.2, blunder: 0.0, aggro: 1.15 }
+};
+
+/* ---------- map generation (180-degree symmetric) ---------- */
+HF.twinIdx = function (s, i) {
+  var c = i % s.W, r = (i / s.W) | 0;
+  return (s.H - 1 - r) * s.W + (s.W - 1 - c);
+};
+
+function terrSet(s, i, t) { s.cells[i].t = t; }
+function setSym(s, i, t) { terrSet(s, i, t); var j = HF.twinIdx(s, i); if (j !== i) terrSet(s, j, t); }
+
+function passable(s, i, doms) {
+  var T = HF.TERR[s.cells[i].t];
+  for (var k = 0; k < doms.length; k++) if (T.cost[doms[k]] > 0) return true;
+  return false;
+}
+
+/* BFS land path check between two hexes for the given domain list */
+function landLink(s, a, b, doms) {
+  var seen = new Uint8Array(s.cells.length), q = [a], head = 0;
+  seen[a] = 1;
+  var nb = [];
+  while (head < q.length) {
+    var i = q[head++];
+    if (i === b) return true;
+    HF.neighbors(s, i % s.W, (i / s.W) | 0, nb);
+    for (var k = 0; k < nb.length; k++) {
+      var j = nb[k];
+      if (seen[j]) continue;
+      if (!passable(s, j, doms)) continue;
+      seen[j] = 1; q.push(j);
+    }
+  }
+  return false;
+}
+
+/* carve a road corridor between two hexes (used as a safety valve) */
+function carveLink(s, a, b) {
+  var W = s.W, prev = new Int32Array(s.cells.length).fill(-1), q = [a], head = 0;
+  prev[a] = a;
+  var nb = [];
+  while (head < q.length) {
+    var i = q[head++];
+    if (i === b) break;
+    HF.neighbors(s, i % W, (i / W) | 0, nb);
+    for (var k = 0; k < nb.length; k++) {
+      var j = nb[k];
+      if (prev[j] !== -1) continue;
+      prev[j] = i; q.push(j);
+    }
+  }
+  if (prev[b] === -1) return;
+  var cur = b;
+  while (cur !== a) {
+    if (HF.TERR[s.cells[cur].t].cost.T < 0) setSym(s, cur, 'BRIDGE');
+    else if (s.cells[cur].t !== 'HQ' && s.cells[cur].t !== 'FACTORY' && s.cells[cur].t !== 'AIRFIELD' &&
+             s.cells[cur].t !== 'CITY' && s.cells[cur].t !== 'DEPOT' && s.cells[cur].t !== 'FARM') setSym(s, cur, 'ROAD');
+    cur = prev[cur];
+  }
+}
+
+function stampBlob(s, c0, r0, rad, t, rng, skipProp) {
+  var list = HF.hexesWithin(s, c0, r0, rad, []);
+  for (var k = 0; k < list.length; k++) {
+    var i = list[k], cell = s.cells[i];
+    if (cell.prop) continue;
+    if (cell.t === 'HQ' || cell.t === 'FACTORY' || cell.t === 'AIRFIELD' || cell.t === 'CITY' ||
+        cell.t === 'DEPOT' || cell.t === 'FARM' || cell.t === 'BRIDGE' || cell.t === 'ROAD') continue;
+    if (rng.chance(0.15 + 0.25 * rad)) continue;
+    setSym(s, i, t);
+  }
+}
+
+HF.genMap = function (stg) {
+  var W = stg.sz[0], H = stg.sz[1];
+  var s = { W: W, H: H, cells: [], theme: stg.theme, seed: stg.seed };
+  function blank() {
+    s.cells.length = 0;
+    for (var i = 0; i < W * H; i++) s.cells.push({ t: 'PLAIN', own: -1, cap: 0, capSide: -1, prop: 0 });
+  }
+
+  var weights = {
+    plain: [['FOREST', 2], ['HILL', 3], ['MOUNTAIN', 1]],
+    river: [['FOREST', 3], ['HILL', 3], ['MOUNTAIN', 1]],
+    woodriver: [['FOREST', 6], ['HILL', 3], ['MOUNTAIN', 2]],
+    forest: [['FOREST', 7], ['HILL', 3], ['MOUNTAIN', 1]],
+    mountain: [['HILL', 6], ['MOUNTAIN', 6], ['FOREST', 2]],
+    desert: [['HILL', 3], ['MOUNTAIN', 3], ['FOREST', 1]],
+    coast: [['FOREST', 3], ['HILL', 2], ['LAKE', 6]],
+    delta: [['RIVER', 4], ['LAKE', 5], ['FOREST', 2]],
+    urban: [['FOREST', 2], ['HILL', 2], ['MOUNTAIN', 1]],
+    final: [['FOREST', 3], ['HILL', 4], ['MOUNTAIN', 4], ['LAKE', 2]]
+  }[stg.theme] || [['FOREST', 2], ['HILL', 2]];
+
+  var tries = 0;
+  while (true) {
+    tries++;
+    var rng = HF.rng(stg.seed + tries * 7919);
+    blank();
+
+    /* terrain blobs in the player's half, mirrored automatically */
+    var blobs = Math.round((W * H) / 34) + 4;
+    for (var b = 0; b < blobs; b++) {
+      var tot = 0, k2;
+      for (k2 = 0; k2 < weights.length; k2++) tot += weights[k2][1];
+      var pick = rng.range(1, tot), acc = 0, tname = weights[0][0];
+      for (k2 = 0; k2 < weights.length; k2++) { acc += weights[k2][1]; if (pick <= acc) { tname = weights[k2][0]; break; } }
+      var c0 = rng.range(1, Math.floor(W / 2) - 1), r0 = rng.range(1, H - 2);
+      stampBlob(s, c0, r0, rng.chance(0.55) ? 1 : 2, tname, rng);
+    }
+
+    /* rivers (vertical, rotationally symmetric wobble) */
+    var rivers = [];
+    if (stg.theme === 'river' || stg.theme === 'woodriver' || stg.theme === 'final') rivers.push(1);
+    if (stg.theme === 'woodriver') rivers.push(2);
+    if (stg.theme === 'delta') rivers.push(1, 2);
+    var riverCells = [];
+    for (var rv = 0; rv < rivers.length; rv++) {
+      var cx = rivers.length === 1 ? (W >> 1) : Math.round(W * (rivers[rv] === 1 ? 0.34 : 0.66));
+      var wob = [], half = Math.ceil(H / 2);
+      for (var r = 0; r < half; r++) wob.push(rng.range(-1, 1));
+      for (r = 0; r < H; r++) {
+        var wr = r < half ? wob[r] : wob[H - 1 - r];
+        var cc = HF.clamp(cx + wr, 1, W - 2);
+        var idx = r * W + cc;
+        if (!s.cells[idx].prop) { setSym(s, idx, 'RIVER'); riverCells.push(idx); }
+      }
+    }
+
+    /* lakes for coastal / delta fields */
+    if (stg.theme === 'coast' || stg.theme === 'delta' || stg.theme === 'final') {
+      var lk = 2 + ((W * H) / 400 | 0);
+      for (var q2 = 0; q2 < lk; q2++) {
+        var lc = rng.range(2, W - 3), lr = rng.chance(0.5) ? rng.range(0, 1) : rng.range(H - 2, H - 1);
+        stampBlob(s, lc, lr, rng.chance(0.4) ? 2 : 1, 'LAKE', rng);
+      }
+    }
+
+    /* roads: two mirrored rows across the field, bridging rivers */
+    var rA = Math.floor((H - 1) / 2), rB = H - 1 - rA;
+    [rA, rB].forEach(function (row) {
+      for (var c = 0; c < W; c++) {
+        var i2 = row * W + c;
+        if (s.cells[i2].prop) continue;
+        if (s.cells[i2].t === 'RIVER' || s.cells[i2].t === 'LAKE') setSym(s, i2, 'BRIDGE');
+        else if (HF.TERR[s.cells[i2].t].cost.T >= 0) setSym(s, i2, 'ROAD');
+      }
+    });
+    /* extra bridges on other rows so the rivers are not a single choke */
+    if (riverCells.length) {
+      var bridges = 2 + (stg.theme === 'woodriver' ? 1 : 0);
+      for (var bb = 0; bb < bridges; bb++) {
+        var brow = rng.range(1, Math.max(1, Math.floor(H / 2) - 1));
+        for (var c3 = 0; c3 < W; c3++) {
+          var i3 = brow * W + c3;
+          if (s.cells[i3].t === 'RIVER') setSym(s, i3, 'BRIDGE');
+          var j3 = HF.twinIdx(s, i3);
+          if (s.cells[j3].t === 'RIVER') terrSet(s, j3, 'BRIDGE');
+        }
+      }
+    }
+
+    /* properties -------------------------------------------------- */
+    function tryProp(t, own0, maxTry, minHQdist) {
+      for (var t2 = 0; t2 < maxTry; t2++) {
+        var c = rng.range(2, W - 4), r = rng.range(1, H - 2);
+        var i = r * W + c;
+        if (s.cells[i].prop) continue;
+        if (!passable(s, i, ['T'])) continue;
+        var cell = s.cells[i];
+        if (cell.t === 'RIVER' || cell.t === 'LAKE') continue;
+        if (HF.dist(c, r, 2, rA) < minHQdist || HF.dist(c, r, W - 3, rB) < minHQdist) continue;
+        var near = 0, nb = HF.neighbors(s, c, r, []);
+        for (var k = 0; k < nb.length; k++) if (s.cells[nb[k]].prop) near++;
+        if (near > 1) continue;
+        var j = HF.twinIdx(s, i);
+        if (j === i || s.cells[j].prop) continue;
+        cell.t = t; cell.prop = 1;
+        cell.own = own0;
+        s.cells[j].t = t; s.cells[j].prop = 1; s.cells[j].own = (own0 < 0 ? -1 : 1 - own0);
+        return true;
+      }
+      return false;
+    }
+
+    var hqA = rA * W + 2, hqB = rB * W + (W - 3);
+    s.cells[hqA].t = 'HQ'; s.cells[hqA].prop = 1; s.cells[hqA].own = 0;
+    s.cells[hqB].t = 'HQ'; s.cells[hqB].prop = 1; s.cells[hqB].own = 1;
+
+    /* industry / support right next to each HQ (choose symmetric direction once) */
+    var dirs = rng.shuffle([[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]]);
+    var placedSup = [];
+    for (var d = 0; d < dirs.length && placedSup.length < stg.props.depot + 1 + (stg.props.air ? 1 : 0); d++) {
+      var c4 = 2 + dirs[d][0], r4 = rA + dirs[d][1];
+      if (!HF.inMap(s, c4, r4)) continue;
+      var i4 = r4 * W + c4;
+      var j4 = HF.twinIdx(s, i4);
+      if (s.cells[i4].prop || s.cells[j4].prop || j4 === i4) continue;
+      var kind = placedSup.length === 0 ? 'FACTORY' : (placedSup.length === 1 ? 'DEPOT' : 'AIRFIELD');
+      if (kind === 'AIRFIELD' && !stg.props.air) kind = 'DEPOT';
+      s.cells[i4].t = kind; s.cells[i4].prop = 1; s.cells[i4].own = 0;
+      s.cells[j4].t = kind; s.cells[j4].prop = 1; s.cells[j4].own = 1;
+      placedSup.push(kind);
+    }
+
+    var ownedPairs = stg.ownPairs || 1;
+    for (var pc = 0; pc < stg.props.city; pc++) tryProp('CITY', pc < ownedPairs ? 0 : -1, 90, 3);
+    for (var pf = 0; pf < stg.props.farm; pf++) tryProp('FARM', -1, 60, 2);
+    /* extra airfields away from the HQ */
+    for (var pa = 0; pa < Math.max(0, stg.props.air - 1); pa++) tryProp('AIRFIELD', -1, 60, 4);
+    for (var pd = 0; pd < Math.max(0, stg.props.depot - 1); pd++) tryProp('DEPOT', -1, 60, 3);
+
+    /* the enemy must be reachable by tracked vehicles from both HQs */
+    var okLink = landLink(s, hqA, hqB, ['T']) && landLink(s, hqB, hqA, ['T']);
+    if (!okLink) {
+      carveLink(s, hqA, hqB);
+      okLink = landLink(s, hqA, hqB, ['T']);
+    }
+    if (okLink || tries > 30) {
+      s.hq = [hqA, hqB];
+      s.starts = [];
+      for (var side = 0; side < 2; side++) {
+        var hq = s.hq[side], ring = HF.hexesWithin(s, hq % W, (hq / W) | 0, 3, []);
+        ring.sort(function (a, b) { return HF.distIdx(s, hq, a) - HF.distIdx(s, hq, b); });
+        s.starts.push(ring.filter(function (i) { return passable(s, i, ['F', 'T']) && s.cells[i].t !== 'LAKE'; }));
+      }
+      break;
+    }
+  }
+  return s;
+};
+
+
+/* ==== part p05_rules.js ==== */
+/* ===== HEXFRONT :: rules engine  EDOM-free ===== */
+
+HF.TKEYS = Object.keys(HF.TERR);
+HF.TCODE = {}; HF.TKEYS.forEach(function (k, i) { HF.TCODE[k] = i; });
+
+HF.stateRng = function (state) {
+  var f = function () {
+    var a = (state.rngState + 0x6D2B79F5) >>> 0;
+    state.rngState = a;
+    var t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  f.range = function (lo, hi) { return lo + Math.floor(f() * (hi - lo + 1)); };
+  f.chance = function (p) { return f() < p; };
+  f.pick = function (arr) { return arr[Math.floor(f() * arr.length)]; };
+  return f;
+};
+
+HF.newGame = function (stageIdx, diff) {
+  var stg = HF.STAGES[stageIdx];
+  var dm = HF.diffMods[diff] || HF.diffMods.normal;
+  var s = HF.genMap(stg);
+  s.stageIdx = stageIdx; s.stage = stg; s.diff = diff; s.dm = dm;
+  s.turn = 1; s.side = 0;
+  s.funds = [stg.funds, Math.round(stg.funds * dm.funds)];
+  s.capU = stg.cap; s.limit = stg.limit;
+  s.units = []; s.occ = new Int32Array(s.W * s.H).fill(0); s.nextId = 1;
+  s.rngState = (stg.seed ^ 0x5f3a) >>> 0;
+  s.over = null; s.log = []; s.escLog = 0;
+  s.ko = [0, 0];           /* units destroyed by side0, by side1 */
+  s.spent = [0, 0];
+  for (var side = 0; side < 2; side++) {
+    var pool = s.starts[side].slice();
+    var list = stg.start.slice();
+    for (var k = 0; k < list.length; k++) {
+      var tid = list[k];
+      if (HF.UNITS[tid].tier > stg.tiers) continue;
+      /* prefer a hex that is not a property, closest first, alternating sides of the HQ */
+      var placed = null;
+      for (var p = 0; p < pool.length; p++) {
+        var i = pool[p];
+        if (s.occ[i]) continue;
+        if (s.cells[i].prop) continue;
+        if (!HF.TERR[s.cells[i].t].cost[HF.UNITS[tid].dom] || HF.TERR[s.cells[i].t].cost[HF.UNITS[tid].dom] < 0) continue;
+        placed = i; pool.splice(p, 1); break;
+      }
+      if (placed === null) {
+        for (var p2 = 0; p2 < pool.length; p2++) {
+          if (!s.occ[pool[p2]]) { placed = pool[p2]; pool.splice(p2, 1); break; }
+        }
+      }
+      if (placed === null) continue;
+      var u = HF.mkUnit(s, tid, side, placed);
+      u.acted = 0;
+    }
+  }
+  HF.pushLog(s, 'log.turn', { n: 1, side: HF.T(HF.sideKey(0)) });
+  HF.sideStart(s, 0);
+  return s;
+};
+HF.sideKey = function (side) { return side === 0 ? 'you' : 'enemy'; };
+HF.mkUnit = function (s, tid, side, i) {
+  var D = HF.UNITS[tid];
+  var u = {
+    id: s.nextId++, t: tid, side: side, i: i, hp: 100,
+    fuel: D.fuel * 10, ammo: D.ammo, acted: 0, attacked: 0, car: []
+  };
+  s.units.push(u); s.occ[i] = u.id;
+  return u;
+};
+
+HF.unitAt = function (s, i) { var id = s.occ[i]; return id ? HF.byId(s, id) : null; };
+HF.byId = function (s, id) {
+  for (var k = 0; k < s.units.length; k++) if (s.units[k].id === id) return s.units[k];
+  return null;
+};
+HF.liveUnits = function (s, side) { return s.units.filter(function (u) { return u.side === side; }); };
+HF.countUnits = function (s, side) { var n = 0; for (var k = 0; k < s.units.length; k++) if (s.units[k].side === side) n++; return n; };
+HF.unitVal = function (u) { return HF.UNITS[u.t].cost * (0.4 + 0.6 * u.hp / 100); };
+HF.escalation = function (s) {
+  var start = Math.round(s.limit * 0.5);
+  if (s.turn <= start) return 1;
+  return Math.min(3, 1 + (s.turn - start) * 0.035);
+};
+
+HF.pushLog = function (s, key, vars) {
+  s.log.push({ k: key, v: vars || {} });
+  if (s.log.length > 80) s.log.shift();
+};
+
+/* ---------- supply + income at the start of a side's turn ---------- */
+HF.incomeOf = function (s, side) {
+  var n = 0, sites = 0;
+  for (var i = 0; i < s.cells.length; i++) {
+    var c = s.cells[i];
+    if (c.own !== side) continue;
+    var inc = HF.TERR[c.t].inc;
+    if (inc > 0) { n += inc; sites++; }
+  }
+  var mult = side === 1 ? (s.dm ? s.dm.inc : 1) : 1;
+  return { n: Math.round(n * mult), sites: sites };
+};
+HF.supplySources = function (s, side) {
+  var set = new Uint8Array(s.cells.length);
+  for (var i = 0; i < s.cells.length; i++) {
+    if (s.cells[i].own === side && HF.TERR[s.cells[i].t].sup) set[i] = 1;
+  }
+  return set;
+};
+HF.sideStart = function (s, side) {
+  var inc = HF.incomeOf(s, side);
+  s.funds[side] += inc.n;
+  if (inc.sites) HF.pushLog(s, 'log.income', { n: inc.n, p: inc.sites });
+  var src = HF.supplySources(s, side), nb = [], fed = 0, starve = 0;
+  var list = HF.liveUnits(s, side);
+  for (var k = 0; k < list.length; k++) {
+    var u = list[k], D = HF.UNITS[u.t];
+    var ok = src[u.i];
+    if (!ok) {
+      HF.neighbors(s, u.i % s.W, (u.i / s.W) | 0, nb);
+      for (var q = 0; q < nb.length && !ok; q++) {
+        if (src[nb[q]]) ok = 1;
+        else { var o = HF.unitAt(s, nb[q]); if (o && o.side === side && HF.UNITS[o.t].supply) ok = 1; }
+      }
+    }
+    if (ok) { u.fuel = D.fuel * 10; if (u.ammo >= 0) u.ammo = D.ammo; fed++; }
+    else starve++;
+    u.acted = 0; u.attacked = 0;
+  }
+  if (fed) HF.pushLog(s, 'log.supply', { n: fed });
+  if (starve) HF.pushLog(s, 'log.starve', { n: starve });
+  var e = HF.escalation(s);
+  if (e > 1.05) {
+    var tier = Math.floor((e - 1) / 0.5);
+    if (tier > s.escLog) { s.escLog = tier; HF.pushLog(s, 'log.escalate', { m: e.toFixed(2) }); }
+  }
+};
+
+/* ---------- movement ---------- */
+HF.canStop = function (s, u, i) {
+  var D = HF.UNITS[u.t], T = HF.TERR[s.cells[i].t];
+  var c = T.cost[D.dom];
+  if (c === undefined || c < 0) return false;
+  if (s.occ[i]) { var o = HF.unitAt(s, i); if (o && o.id !== u.id) return false; }
+  return true;
+};
+HF.canPass = function (s, u, i) {
+  var D = HF.UNITS[u.t], T = HF.TERR[s.cells[i].t];
+  var c = T.cost[D.dom];
+  if (c === undefined || c < 0) return false;
+  var o = HF.unitAt(s, i);
+  if (o && o.side !== u.side && o.id !== u.id) return false;   /* enemies block */
+  return true;
+};
+/* Dijkstra from the unit's hex; returns {cost, prev, stop:Set-like Uint8Array} */
+HF.reach = function (s, u, maxFuel) {
+  var W = s.W, n = s.cells.length;
+  var cost = new Int32Array(n).fill(-1);
+  var prev = new Int32Array(n).fill(-1);
+  var budget = Math.min(u.fuel, HF.UNITS[u.t].mv * 10, maxFuel === undefined ? 1e9 : maxFuel);
+  cost[u.i] = 0;
+  var frontier = [u.i];
+  while (frontier.length) {
+    /* simple selection of the cheapest node (maps are small) */
+    var bi = 0;
+    for (var k = 1; k < frontier.length; k++) if (cost[frontier[k]] < cost[frontier[bi]]) bi = k;
+    var cur = frontier.splice(bi, 1)[0];
+    var nb = HF.neighbors(s, cur % W, (cur / W) | 0, []);
+    for (var q = 0; q < nb.length; q++) {
+      var j = nb[q];
+      if (!HF.canPass(s, u, j)) continue;
+      var c2 = cost[cur] + HF.TERR[s.cells[j].t].cost[HF.UNITS[u.t].dom];
+      if (c2 > budget) continue;
+      if (cost[j] === -1 || c2 < cost[j]) { cost[j] = c2; prev[j] = cur; frontier.push(j); }
+    }
+  }
+  var stop = new Uint8Array(n);
+  for (var i2 = 0; i2 < n; i2++) if (cost[i2] >= 0 && HF.canStop(s, u, i2)) stop[i2] = 1;
+  return { cost: cost, prev: prev, stop: stop, budget: budget };
+};
+HF.pathTo = function (s, r, i) {
+  var out = [], cur = i;
+  while (cur !== -1 && cur !== undefined) { out.push(cur); cur = r.prev[cur]; }
+  return out.reverse();
+};
+HF.canAct = function (s, u) { return !u.acted && !u.attacked && !s.over && s.side === u.side; };
+HF.canFire = function (s, u) { return !u.attacked && !s.over && s.side === u.side; };
+HF.mayMove = function (s, u) { return HF.canAct(s, u) && u.fuel >= 10 && HF.UNITS[u.t].mv > 0; };
+
+
+HF.doMove = function (s, u, toIdx) {
+  if (!HF.mayMove(s, u)) return null;
+  var r = HF.reach(s, u);
+  if (!r.stop[toIdx] || r.cost[toIdx] < 0) return null;
+  var path = HF.pathTo(s, r, toIdx);
+  var from = u.i;
+  s.occ[from] = 0;
+  u.i = toIdx; s.occ[toIdx] = u.id;
+  u.fuel -= r.cost[toIdx];
+  u.acted = 1;
+  var ev = { k: 'move', id: u.id, from: from, to: toIdx, path: path, unit: u.t, side: u.side };
+  if (path.length > 1) HF.pushLog(s, 'log.move', { u: HF.L(HF.UNITS[u.t].n), c: HF.L(HF.TERR[s.cells[toIdx].t].n) });
+  return ev;
+};
+
+/* ---------- combat ---------- */
+HF.designateBonus = function (s, a, tgt) {
+  var best = 1;
+  for (var k = 0; k < s.units.length; k++) {
+    var d = s.units[k];
+    if (d.side !== a.side || d === a) continue;
+    var D = HF.UNITS[d.t];
+    if (!D.desig) continue;
+    if (HF.distIdx(s, d.i, tgt.i) <= D.desig) { best = 1 + 0.18; break; }
+  }
+  return best;
+};
+HF.hasAmmo = function (u) { var D = HF.UNITS[u.t]; return D.ammo < 0 || u.ammo > 0; };
+HF.targetOk = function (s, a, t) {
+  var A = HF.UNITS[a.t];
+  if (!(A.mul[HF.UNITS[t.t].cls] > 0)) return false;
+  if (A.ammo >= 0 && a.ammo <= 0) return false;
+  return true;
+};
+
+/* deterministic per-engagement roll: the preview matches the shot exactly */
+HF.hash01 = function (x) {
+  x = (x >>> 0) ^ 0x9e3779b9;
+  x = Math.imul(x, 0x7feb352d); x = (x ^ (x >>> 15)) >>> 0;
+  x = Math.imul(x, 0x846ca68b); x = (x ^ (x >>> 16)) >>> 0;
+  return x / 4294967296;
+};
+HF.roll = function (s, a, t, from, salt) {
+  var x = (a.id * 2654435761) ^ (t.id * 40503) ^ (from * 97) ^ (s.turn * 131) ^ (salt * 7919) ^ (s.stageIdx * 31);
+  return HF.hash01(x >>> 0);
+};
+
+HF.forecast = function (s, a, t, fromIdx) {
+  var A = HF.UNITS[a.t], B = HF.UNITS[t.t];
+  if (t.hp <= 0 || a.hp <= 0) return null;
+  var mul = A.mul[B.cls] || 0;
+  if (mul <= 0) return null;
+  var from = (fromIdx === undefined) ? a.i : fromIdx;
+  var d = HF.distIdx(s, from, t.i);
+  if (d < A.r0 || d > A.r1) return null;
+  if (A.ammo >= 0 && a.ammo <= 0) return null;
+  var hpF = 0.55 + 0.45 * (a.hp / 100);
+  var defF = 1 + HF.TERR[s.cells[t.i].t].def * 0.062;
+  var des = HF.designateBonus(s, a, t);
+  var v = 0.94 + HF.roll(s, a, t, from, 1) * 0.12;
+  var dmg = Math.max(1, Math.round(A.atk * mul * hpF * des * v * HF.escalation(s) / defF));
+  dmg = Math.min(dmg, t.hp);
+  /* counter */
+  var counter = 0;
+  if (!B.ind && dmg < t.hp) {
+    var mul2 = B.mul[A.cls] || 0;
+    var dd = HF.distIdx(s, t.i, from);
+    if (mul2 > 0 && dd >= B.r0 && dd <= B.r1 && !(B.ammo >= 0 && t.ammo <= 0)) {
+      var hpF2 = 0.55 + 0.45 * ((t.hp - dmg) / 100);
+      var defF2 = 1 + HF.TERR[s.cells[from].t].def * 0.062;
+      var v2 = 0.94 + HF.roll(s, t, a, from, 2) * 0.12;
+      counter = Math.max(1, Math.round(B.atk * mul2 * hpF2 * v2 * HF.escalation(s) / defF2 * (A.ind ? 1 : 0.9)));
+      counter = Math.min(counter, a.hp);
+    }
+  }
+  return { dmg: dmg, counter: counter, desig: des > 1, mul: mul, def: HF.TERR[s.cells[t.i].t].def };
+};
+
+HF.doAttack = function (s, a, t, fromIdx) {
+  if (!HF.canFire(s, a)) return null;
+  var fc = HF.forecast(s, a, t, fromIdx);
+  if (!fc) return null;
+  var A = HF.UNITS[a.t];
+  if (A.ammo >= 0) a.ammo--;
+  t.hp -= fc.dmg;
+  var ev = {
+    k: 'attack', id: a.id, side: a.side, unit: a.t, tgt: t.id, tgtUnit: t.t,
+    from: a.i, to: t.i, dmg: fc.dmg, counter: fc.counter, desig: fc.desig
+  };
+  HF.pushLog(s, 'log.attack', { a: HF.L(A.n), b: HF.L(HF.UNITS[t.t].n), d: fc.dmg });
+  if (fc.desig) HF.pushLog(s, 'log.designate', { p: 18 });
+  var tgtDead = false;
+  if (t.hp <= 0) { tgtDead = true; HF.removeUnit(s, t); s.ko[a.side]++; ev.tgtKo = true; HF.pushLog(s, 'log.ko', { b: HF.L(HF.UNITS[t.t].n) }); }
+  else if (fc.counter > 0) {
+    a.hp -= fc.counter;
+    HF.pushLog(s, 'log.counter', { d: fc.counter });
+    if (a.hp <= 0) { HF.removeUnit(s, a); s.ko[t.side]++; ev.atkKo = true; HF.pushLog(s, 'log.ko', { b: HF.L(HF.UNITS[a.t].n) }); }
+  }
+  a.acted = 1; a.attacked = 1;
+  ev.tgtDead = tgtDead;
+  return ev;
+};
+
+HF.removeUnit = function (s, u) {
+  if (s.occ[u.i] === u.id) s.occ[u.i] = 0;
+  var k = s.units.indexOf(u);
+  if (k >= 0) s.units.splice(k, 1);
+};
+
+/* ---------- capture / production / support actions ---------- */
+HF.endTurn = function (s) {
+  var side = s.side;
+  var evs = [];
+  var nb = [];
+  /* capture progress for units that stayed put */
+  for (var k = 0; k < s.units.length; k++) {
+    var u = s.units[k];
+    if (u.side !== side) continue;
+    var D = HF.UNITS[u.t], cell = s.cells[u.i];
+    if (!D.cap || !HF.TERR[cell.t].cap || cell.own === side) continue;
+    if (u.hp < 40) continue;
+    if (cell.capSide !== side) { cell.capSide = side; cell.cap = 0; }
+    cell.cap++;
+    var need = HF.TERR[cell.t].cap;
+    if (cell.cap >= need) {
+      cell.own = side; cell.cap = 0; cell.capSide = -1;
+      HF.pushLog(s, 'log.cap', { p: HF.L(HF.TERR[cell.t].n) });
+      evs.push({ k: 'capture', i: u.i, side: side, prop: cell.t });
+      if (cell.t === 'HQ') { HF.setOver(s, side, 'hq'); }
+    } else {
+      HF.pushLog(s, 'log.capp', { p: HF.L(HF.TERR[cell.t].n), n: cell.cap, m: need });
+      if (cell.t === 'HQ') {
+        var dmg = 20;
+        u.hp -= dmg;
+        HF.pushLog(s, 'log.hq', { d: dmg });
+        evs.push({ k: 'hqfire', i: u.i, dmg: dmg, id: u.id });
+        if (u.hp <= 0) { HF.removeUnit(s, u); k--; s.ko[1 - side]++; }
+      }
+    }
+  }
+  if (!s.over) {
+    /* rout check */
+    for (var side2 = 0; side2 < 2; side2++) {
+      var other = 1 - side2;
+      if (HF.countUnits(s, side2) > 0) continue;
+      var prod = 0;
+      for (var i = 0; i < s.cells.length; i++) if (s.cells[i].own === side2 && HF.TERR[s.cells[i].t].inc > 0) prod++;
+      var cheapest = 999;
+      for (var tid in HF.UNITS) if (HF.UNITS[tid].tier <= s.stage.tiers) cheapest = Math.min(cheapest, HF.UNITS[tid].cost);
+      if (prod === 0 && s.funds[side2] < cheapest) { HF.setOver(s, other, 'rout'); break; }
+    }
+  }
+  if (!s.over && side === 1 && s.turn >= s.limit) {
+    var a = HF.score(s, 0), b = HF.score(s, 1);
+    HF.pushLog(s, 'log.timeout', { a: a, b: b });
+    HF.setOver(s, a >= b ? 0 : 1, 'limit');
+  }
+  if (s.over) { evs.push({ k: 'over', win: s.over.win, why: s.over.why }); return evs; }
+  s.side = 1 - side;
+  if (s.side === 0) s.turn++;
+  HF.pushLog(s, 'log.turn', { n: s.turn, side: HF.T(HF.sideKey(s.side)) });
+  HF.sideStart(s, s.side);
+  evs.push({ k: 'turnend', side: s.side, turn: s.turn });
+  return evs;
+};
+
+HF.setOver = function (s, win, why) {
+  s.over = { win: win, why: why, score: [HF.score(s, 0), HF.score(s, 1)], turns: s.turn };
+  HF.pushLog(s, win === 0 ? 'log.win' : 'log.lose', { s: HF.T(HF.sideKey(win)) });
+};
+HF.score = function (s, side) {
+  var v = s.funds[side];
+  var list = HF.liveUnits(s, side);
+  for (var k = 0; k < list.length; k++) v += HF.unitVal(list[k]) * 1.6;
+  for (var i = 0; i < s.cells.length; i++) {
+    var c = s.cells[i];
+    if (c.own !== side) continue;
+    v += HF.TERR[c.t].inc * 6;
+    if (c.t === 'HQ') v += 60;
+  }
+  return Math.round(v);
+};
+
+HF.buildable = function (s, cellIdx, side) {
+  var cell = s.cells[cellIdx];
+  if (cell.own !== side) return null;
+  var kind = HF.TERR[cell.t].build;
+  if (!kind) return null;
+  if (s.occ[cellIdx]) return null;
+  var out = [];
+  for (var tid in HF.UNITS) {
+    var D = HF.UNITS[tid];
+    if (D.build !== kind) continue;
+    if (D.tier > s.stage.tiers) continue;
+    out.push(tid);
+  }
+  out.sort(function (a, b) { return HF.UNITS[a].cost - HF.UNITS[b].cost; });
+  return out;
+};
+HF.canBuild = function (s, cellIdx, side, tid) {
+  var list = HF.buildable(s, cellIdx, side);
+  if (!list) return 'block';
+  if (list.indexOf(tid) < 0) return 'lock';
+  if (HF.countUnits(s, side) >= s.capU) return 'cap';
+  if (s.funds[side] < HF.UNITS[tid].cost) return 'funds';
+  return true;
+};
+HF.doBuild = function (s, cellIdx, side, tid) {
+  var chk = HF.canBuild(s, cellIdx, side, tid);
+  if (chk !== true) return null;
+  s.funds[side] -= HF.UNITS[tid].cost; s.spent[side] += HF.UNITS[tid].cost;
+  var u = HF.mkUnit(s, tid, side, cellIdx);
+  u.acted = 1; u.attacked = 1;       /* new unit cannot act this turn */
+  HF.pushLog(s, 'log.build', { u: HF.L(HF.UNITS[tid].n), c: HF.UNITS[tid].cost });
+  return { k: 'build', id: u.id, i: cellIdx, unit: tid, side: side };
+};
+
+HF.canLoad = function (s, carrier, cargo) {
+  var C = HF.UNITS[carrier.t];
+  if (!C.car) return false;
+  if (carrier.car.length >= C.car) return false;
+  if (HF.UNITS[cargo.t].cls !== C.cld) return false;
+  if (cargo.side !== carrier.side || carrier.id === cargo.id) return false;
+  if (HF.distIdx(s, carrier.i, cargo.i) !== 1) return false;
+  if (!HF.canAct(s, cargo)) return false;
+  return true;
+};
+HF.doLoad = function (s, carrier, cargo) {
+  if (!HF.canLoad(s, carrier, cargo)) return null;
+  HF.removeUnit(s, cargo);
+  cargo.acted = 1;
+  carrier.car.push(cargo);
+  carrier.acted = 1;
+  HF.pushLog(s, 'log.load', { a: HF.L(HF.UNITS[cargo.t].n), b: HF.L(HF.UNITS[carrier.t].n) });
+  return { k: 'load', id: cargo.id, by: carrier.id };
+};
+HF.unloadSpots = function (s, carrier, toIdx) {
+  var out = [];
+  if (!carrier.car.length) return out;
+  var r = HF.reach(s, carrier);
+  if (!r.stop[toIdx] || r.cost[toIdx] < 0) return out;
+  var nb = HF.neighbors(s, toIdx % s.W, (toIdx / s.W) | 0, []);
+  for (var k = 0; k < nb.length; k++) {
+    var j = nb[k];
+    if (s.occ[j]) continue;
+    var ok = carrier.car.some(function (c) {
+      var cst = HF.TERR[s.cells[j].t].cost[HF.UNITS[c.t].dom];
+      return cst > 0;
+    });
+    if (ok) out.push(j);
+  }
+  return out;
+};
+HF.doUnload = function (s, carrier, toIdx) {
+  if (!carrier.car.length || !HF.canAct(s, carrier)) return null;
+  var r = HF.reach(s, carrier);
+  if (!r.stop[toIdx] || r.cost[toIdx] < 0) return null;
+  var spots = HF.unloadSpots(s, carrier, toIdx);
+  if (!spots.length) return null;
+  var from = carrier.i;
+  var cargo = carrier.car.shift();
+  var best = spots[0];
+  var hq = s.hq[1 - carrier.side];
+  var bd = 1e9;
+  for (var k = 0; k < spots.length; k++) {
+    var d = HF.distIdx(s, spots[k], hq);
+    if (d < bd) { bd = d; best = spots[k]; }
+  }
+  s.occ[from] = 0;
+  carrier.i = toIdx; s.occ[toIdx] = carrier.id;
+  carrier.fuel -= r.cost[toIdx];
+  carrier.acted = 1;
+  cargo.i = best; s.occ[best] = cargo.id; cargo.acted = 1; cargo.attacked = 1;
+  s.units.push(cargo);
+  HF.pushLog(s, 'log.unload', { p: HF.L(HF.TERR[s.cells[best].t].n) });
+  return { k: 'unload', id: carrier.id, from: from, to: toIdx, cargo: cargo.id, at: best };
+};
+
+HF.canFort = function (s, u) {
+  if (!HF.UNITS[u.t].fort || !HF.canAct(s, u)) return false;
+  var cell = s.cells[u.i];
+  if (cell.prop) return false;
+  if (cell.t === 'FORT') return false;
+  if (s.funds[u.side] < HF.FORT_COST) return false;
+  return true;
+};
+HF.doFort = function (s, u) {
+  if (!HF.canFort(s, u)) return null;
+  s.funds[u.side] -= HF.FORT_COST;
+  s.cells[u.i].t = 'FORT';
+  u.acted = 1;
+  HF.pushLog(s, 'log.fort', {});
+  return { k: 'fort', i: u.i, id: u.id };
+};
+HF.canDepot = function (s, u) {
+  if (!HF.UNITS[u.t].depot || !HF.canAct(s, u)) return false;
+  var cell = s.cells[u.i];
+  if (cell.prop) return false;
+  if (s.funds[u.side] < HF.DEPOT_COST) return false;
+  return true;
+};
+HF.doDepot = function (s, u) {
+  if (!HF.canDepot(s, u)) return null;
+  s.funds[u.side] -= HF.DEPOT_COST;
+  s.cells[u.i].t = 'DEPOT'; s.cells[u.i].prop = 1; s.cells[u.i].own = u.side;
+  u.acted = 1;
+  HF.pushLog(s, 'log.depot', { c: HF.DEPOT_COST });
+  return { k: 'depot', i: u.i, id: u.id };
+};
+
+/* every enemy unit that could shoot u from somewhere in its own reach (for AI + hints) */
+HF.threatAt = function (s, u, i, cache) {
+  var best = 0;
+  var foes = HF.liveUnits(s, 1 - u.side);
+  for (var k = 0; k < foes.length; k++) {
+    var f = foes[k];
+    var key = f.id;
+    var r = cache[key] || (cache[key] = HF.reach(s, f));
+    var D = HF.UNITS[f.t];
+    for (var d = D.r0; d <= D.r1; d++) {
+      var ring = HF.hexesWithin(s, i % s.W, (i / s.W) | 0, d, []).filter(function (x) { return HF.distIdx(s, x, i) === d; });
+      for (var q = 0; q < ring.length; q++) {
+        var from = ring[q];
+        if (from !== f.i && (r.cost[from] < 0 || !r.stop[from])) continue;
+        if (!(D.mul[HF.UNITS[u.t].cls] > 0)) continue;
+        if (D.ammo >= 0 && f.ammo <= 0) continue;
+        var mul = D.mul[HF.UNITS[u.t].cls];
+        var est = D.atk * mul * (0.55 + 0.45 * f.hp / 100) * HF.escalation(s) / (1 + HF.TERR[s.cells[i].t].def * 0.062);
+        if (est > best) best = est;
+        break;
+      }
+      if (best) break;
+    }
+  }
+  return Math.round(best);
+};
+
+/* ---------- save / load (compact, local only) ---------- */
+HF.pack = function (s) {
+  var t = '', o = [], cp = [], cs = [], pr = [];
+  for (var i = 0; i < s.cells.length; i++) {
+    t += String.fromCharCode(65 + HF.TCODE[s.cells[i].t]);
+    o.push(s.cells[i].own + 1); cp.push(s.cells[i].cap); cs.push(s.cells[i].capSide + 1); pr.push(s.cells[i].prop);
+  }
+  function pk(u) {
+    return [u.id, HF.UIDS.indexOf(u.t), u.side, u.i, u.hp, u.fuel, u.ammo, u.acted ? 1 : 0, u.attacked ? 1 : 0,
+      u.car.map(function (c) { return pk(c); })];
+  }
+  return {
+    v: 1, stageIdx: s.stageIdx, diff: s.diff, turn: s.turn, side: s.side,
+    funds: s.funds, capU: s.capU, limit: s.limit, rng: s.rngState, over: s.over,
+    escLog: s.escLog, ko: s.ko, spent: s.spent, nextId: s.nextId,
+    t: t, o: o, cp: cp, cs: cs, pr: pr,
+    u: s.units.map(pk),
+    log: s.log.slice(-40)
+  };
+};
+HF.unpack = function (p) {
+  var stg = HF.STAGES[p.stageIdx];
+  var s = HF.genMap(stg);                     /* regenerate the same terrain shell */
+  s.stageIdx = p.stageIdx; s.stage = stg; s.diff = p.diff;
+  s.dm = HF.diffMods[p.diff] || HF.diffMods.normal;
+  s.turn = p.turn; s.side = p.side; s.funds = p.funds.slice(); s.capU = p.capU; s.limit = p.limit;
+  s.rngState = p.rng; s.over = p.over || null; s.escLog = p.escLog || 0;
+  s.ko = (p.ko || [0, 0]).slice(); s.spent = (p.spent || [0, 0]).slice(); s.nextId = p.nextId;
+  s.units = []; s.occ = new Int32Array(s.W * s.H).fill(0); s.log = p.log || [];
+  if (p.t.length !== s.cells.length) return null;      /* stage definition changed */
+  for (var i = 0; i < s.cells.length; i++) {
+    s.cells[i].t = HF.TKEYS[p.t.charCodeAt(i) - 65];
+    s.cells[i].own = p.o[i] - 1; s.cells[i].cap = p.cp[i]; s.cells[i].capSide = p.cs[i] - 1;
+    s.cells[i].prop = p.pr[i];
+  }
+  function up(a, topLevel) {
+    var u = {
+      id: a[0], t: HF.UIDS[a[1]], side: a[2], i: a[3], hp: a[4], fuel: a[5], ammo: a[6],
+      acted: a[7], attacked: a[8], car: (a[9] || []).map(function (c) { return up(c, false); })
+    };
+    if (topLevel) {
+      if (u.i >= 0 && u.i < s.occ.length && !s.occ[u.i]) s.occ[u.i] = u.id;
+      if (u.i >= 0 && u.i < s.cells.length) s.units.push(u);
+    }
+    return u;
+  }
+  p.u.forEach(function (a) { up(a, true); });
+  return s;
+};
+
+
+/* ==== part p06_ai.js ==== */
+/* ===== HEXFRONT :: enemy commander (AI) — DOM-free ===== */
+
+/* unweighted hex distance to the nearest source hex */
+HF.distField = function (s, sources) {
+  var n = s.cells.length, d = new Int32Array(n).fill(9999), q = [], head = 0, nb = [];
+  for (var k = 0; k < sources.length; k++) { d[sources[k]] = 0; q.push(sources[k]); }
+  while (head < q.length) {
+    var i = q[head++];
+    HF.neighbors(s, i % s.W, (i / s.W) | 0, nb);
+    for (var q2 = 0; q2 < nb.length; q2++) {
+      var j = nb[q2];
+      if (d[j] > d[i] + 1) { d[j] = d[i] + 1; q.push(j); }
+    }
+  }
+  return d;
+};
+/* terrain movement-cost to the nearest source hex, for one domain */
+HF.costField = function (s, dom, sources) {
+  var n = s.cells.length, d = new Int32Array(n).fill(-1), q = [];
+  for (var k = 0; k < sources.length; k++) {
+    var i = sources[k];
+    if (HF.TERR[s.cells[i].t].cost[dom] < 0) continue;
+    d[i] = 0; q.push(i);
+  }
+  while (q.length) {
+    var bi = 0;
+    for (var k2 = 1; k2 < q.length; k2++) if (d[q[k2]] < d[q[bi]]) bi = k2;
+    var cur = q.splice(bi, 1)[0];
+    var nb = HF.neighbors(s, cur % s.W, (cur / s.W) | 0, []);
+    for (var z = 0; z < nb.length; z++) {
+      var j2 = nb[z], cst = HF.TERR[s.cells[j2].t].cost[dom];
+      if (cst < 0) continue;
+      var nd = d[cur] + HF.TERR[s.cells[cur].t].cost[dom];
+      if (d[j2] === -1 || nd < d[j2]) { d[j2] = nd; q.push(j2); }
+    }
+  }
+  for (var m = 0; m < n; m++) if (d[m] < 0) d[m] = 4000;
+  return d;
+};
+/* neighbour rings per hex, cached per map size (geometry only) */
+var RINGC = {};
+HF.rings = function (s) {
+  var key = s.W + 'x' + s.H;
+  if (RINGC[key]) return RINGC[key];
+  var arr = new Array(s.cells.length);
+  for (var i = 0; i < s.cells.length; i++) {
+    var buckets = [];
+    for (var d = 0; d <= 7; d++) buckets.push([]);
+    for (var j = 0; j < s.cells.length; j++) {
+      var dd = HF.distIdx(s, i, j);
+      if (dd <= 6) buckets[dd].push(j);
+    }
+    arr[i] = buckets;
+  }
+  RINGC[key] = arr;
+  return arr;
+};
+
+/* th[cls][hex] = estimated incoming damage if a unit of cls stood there */
+HF.threatFields = function (s, side) {
+  var th = {}, peak = {};
+  for (var c = 0; c < HF.CLASSES.length; c++) {
+    th[HF.CLASSES[c]] = new Int32Array(s.cells.length);
+    peak[HF.CLASSES[c]] = new Int32Array(s.cells.length);
+  }
+  var foes = HF.liveUnits(s, 1 - side), esc = HF.escalation(s), RG = HF.rings(s);
+  for (var f = 0; f < foes.length; f++) {
+    var fo = foes[f], D = HF.UNITS[fo.t];
+    if (D.atk <= 0) continue;
+    if (D.ammo >= 0 && fo.ammo <= 0) continue;
+    var mulCls = [], any = 0;
+    for (var c2 = 0; c2 < HF.CLASSES.length; c2++) {
+      var m = D.mul[HF.CLASSES[c2]] || 0;
+      if (m > 0) { mulCls.push([HF.CLASSES[c2], m]); any = 1; }
+    }
+    if (!any) continue;
+    var covered = new Uint8Array(s.cells.length), r = HF.reach(s, fo);
+    for (var h = 0; h < s.cells.length; h++) {
+      if (r.cost[h] < 0 || !r.stop[h]) continue;
+      var ring = RG[h];
+      for (var d = D.r0; d <= D.r1 && d <= 6; d++) {
+        var list = ring[d];
+        for (var e = 0; e < list.length; e++) {
+          var x = list[e];
+          if (x !== fo.i) covered[x] = 1;
+        }
+      }
+    }
+    for (var x2 = 0; x2 < s.cells.length; x2++) {
+      if (!covered[x2]) continue;
+      var df = 1 + HF.TERR[s.cells[x2].t].def * 0.062;
+      var base = D.atk * (0.55 + 0.45 * fo.hp / 100) * esc / df;
+      for (var c4 = 0; c4 < mulCls.length; c4++) {
+        var cls = mulCls[c4][0], v = Math.round(base * mulCls[c4][1]);
+        th[cls][x2] += v;
+        if (v > peak[cls][x2]) peak[cls][x2] = v;
+      }
+    }
+  }
+  for (var c5 = 0; c5 < HF.CLASSES.length; c5++) {
+    var cls2 = HF.CLASSES[c5];
+    for (var x3 = 0; x3 < s.cells.length; x3++)
+      th[cls2][x3] = peak[cls2][x3] + Math.floor((th[cls2][x3] - peak[cls2][x3]) / 4);
+  }
+  return th;
+};
+
+/* ---------- what the AI wants to build (weights per candidate) ---------- */
+HF.aiPickBuild = function (s, side, cellIdx) {
+  var stg = s.stage, mine = HF.liveUnits(s, side), foes = HF.liveUnits(s, 1 - side);
+  var list = HF.buildable(s, cellIdx, side);
+  if (!list) return null;
+  var allowed = {};
+  for (var qz = 0; qz < list.length; qz++) allowed[list[qz]] = 1;
+  var have = { INF: 0, SOFT: 0, ARM: 0, AIR: 0 }, key = {};
+  function kc(t) { return key[t] || 0; }
+  for (var k = 0; k < mine.length; k++) { have[HF.UNITS[mine[k].t].cls]++; key[mine[k].t] = (key[mine[k].t] || 0) + 1; }
+  var foeArm = 0, foeAir = 0, foeInf = 0, foeAll = 0;
+  for (var q = 0; q < foes.length; q++) {
+    var C = HF.UNITS[foes[q].t].cls; foeAll++;
+    if (C === 'ARM') foeArm++; else if (C === 'AIR') foeAir++; else if (C === 'INF') foeInf++;
+  }
+  var antitank = kc('ATGM') * 1.4 + kc('MBT') + kc('AH') + kc('SPART') * 0.7 + kc('BJ') + kc('IFV') * 0.6;
+  var antiAir = kc('SAM') * 1.6 + kc('AAA') * 1.3 + kc('FT') * 1.4 + kc('MG') * 0.35;
+  /* how many capture-capable units do we need? */
+  var targets = 0;
+  for (var i = 0; i < s.cells.length; i++) {
+    var cell = s.cells[i];
+    if (!HF.TERR[cell.t].cap || cell.own === side) continue;
+    if (HF.distIdx(s, i, s.hq[side]) <= 6) targets++;
+  }
+  var capturers = 0;
+  for (var c = 0; c < mine.length; c++) if (HF.UNITS[mine[c].t].cap) capturers++;
+  var needInf = Math.max(0, Math.min(6, targets) - capturers);
+  var needy = 0;
+  for (var m = 0; m < mine.length; m++) {
+    var u = mine[m];
+    if (u.fuel < HF.UNITS[u.t].fuel * 3 || (HF.UNITS[u.t].ammo >= 0 && u.ammo <= 1)) needy++;
+  }
+  var w = [];
+  function add(tid, weight) {
+    if (!allowed[tid]) return;
+    if (!(weight > 0)) return;
+    w.push([tid, weight]);
+  }
+  add('RIFLE', needInf * 22 + 8);
+  add('MG', (kc('MG') < 2 ? 8 : 0) + (foeInf > 4 ? 6 : 0));
+  add('ATGM', foeArm > antitank ? 26 : 4);
+  add('ENG', (kc('ENG') < 2 ? 10 : 0) + (needy > 2 ? 6 : 0));
+  add('TRUCK', needy > 3 && kc('TRUCK') < 3 ? 16 : (kc('TRUCK') < 1 ? 5 : 0));
+  add('APC', kc('APC') < 2 ? 7 : 0);
+  add('IFV', 10);
+  add('MBT', foeArm < antitank ? 8 : 18);
+  add('SPART', 13);
+  add('MLRS', 10);
+  add('AAA', foeAir > antiAir * 0.6 ? 18 : 0);
+  add('SAM', foeAir > 0 ? (foeAir > antiAir * 0.5 ? 22 : 8) : 0);
+  add('CH', kc('CH') < 2 && needy > 2 ? 8 : 0);
+  add('UAV', 7);
+  add('AH', foeArm > 1 ? 18 : 8);
+  add('FT', foeAir >= 1 ? 20 : 0);
+  add('BJ', 16);
+  if (!w.length) return null;
+  var tot = 0;
+  for (var t = 0; t < w.length; t++) tot += w[t][1];
+  return { table: w, total: tot };
+};
+
+/* ---------- one AI turn ---------- */
+HF.aiTurn = function (s) {
+  var evs = [];
+  if (s.over) return evs;
+  var side = s.side, dm = s.dm || HF.diffMods.normal, aggro = dm.aggro;
+  var rng = HF.stateRng(s);
+  var foes = HF.liveUnits(s, 1 - side), mine = HF.liveUnits(s, side);
+  var th = HF.threatFields(s, side);
+  /* objectives */
+  var capProps = [], ownProps = [], ownSup = [], buildCells = [];
+  for (var i = 0; i < s.cells.length; i++) {
+    var cell = s.cells[i], T = HF.TERR[cell.t];
+    if (T.cap && cell.own !== side) capProps.push(i);
+    if (T.cap && cell.own === side) ownProps.push(i);
+    if (cell.own === side && T.sup) ownSup.push(i);
+    if (cell.own === side && T.build) buildCells.push(i);
+  }
+  var enemyHexes = foes.map(function (u) { return u.i; });
+  var fCache = {}, dCache = {};
+  function field(dom, kind, src) {
+    var key = kind + dom + ':' + src.slice().sort(function (a, b) { return a - b; }).join(',');
+    if (!fCache[key]) fCache[key] = (kind === 'cost') ? HF.costField(s, dom, src) : HF.distField(s, src);
+    return fCache[key];
+  }
+  /* capture-defence: hexes of our property that the enemy is contesting */
+  var contest = ownProps.filter(function (i) { return s.cells[i].capSide !== side && s.cells[i].capSide >= 0; });
+  var nearHq = s.hq[side];
+  var order = mine.slice().sort(function (a, b) {
+    var A = HF.UNITS[a.t], B = HF.UNITS[b.t];
+    return (B.ind ? -1 : 1) - (A.ind ? -1 : 1) || B.cost - A.cost;
+  });
+
+  for (var k = 0; k < order.length; k++) {
+    var u = HF.byId(s, order[k].id);
+    if (!u || u.acted || u.attacked) continue;
+    var D = HF.UNITS[u.t], val = D.cost;
+    var r = HF.reach(s, u);
+    var reachList = [];
+    for (var h2 = 0; h2 < s.cells.length; h2++) if (r.cost[h2] >= 0 && r.stop[h2]) reachList.push(h2);
+    /* choose the objective field for this unit */
+    var needSupply = (u.fuel < D.fuel * 4) || (D.ammo >= 0 && u.ammo <= 1);
+    var objField, ideal = 0;
+    if (D.ind) { objField = field('A', 'dist', enemyHexes.length ? enemyHexes : capProps); ideal = (D.r0 + D.r1) / 2; }
+    else if (D.cap) objField = field(D.dom, 'cost', capProps.length ? capProps : enemyHexes);
+    else if (D.supply) objField = field(D.dom, 'cost', ownProps.length ? ownProps : ownSup);
+    else if (D.cls === 'AIR') objField = field('A', 'dist', enemyHexes.length ? enemyHexes : capProps);
+    else objField = field(D.dom, 'cost', enemyHexes.length ? enemyHexes : capProps);
+    var stayCost = objField[u.i];
+    var supField = needSupply ? field(D.dom, 'cost', ownSup.length ? ownSup : [nearHq]) : null;
+    /* operational pull: heavy formations want the enemy HQ, not just the next farm */
+    var foeHqField = null, hqStay = 0, hqPush = 0;
+    if (D.cap || D.cls === 'ARM') {
+      foeHqField = field(D.dom, 'cost', [s.hq[1 - side]]);
+      hqStay = foeHqField[u.i];
+      hqPush = (D.cls === 'ARM' || val >= 13) ? 1.35 : 0.55;
+    }
+    var best = { h: u.i, sc: -Infinity, tgt: null };
+    var vuln = [];
+    if (!(D.ammo >= 0 && u.ammo <= 0)) {
+      for (var e2 = 0; e2 < foes.length; e2++) {
+        var fo2 = foes[e2], F0 = HF.UNITS[fo2.t];
+        var mm = D.mul[F0.cls] || 0;
+        if (mm <= 0 || fo2.hp <= 0 || !HF.byId(s, fo2.id)) continue;
+        vuln.push({
+          foe: fo2, F: F0, tv: F0.cost
+        });
+      }
+    }
+
+    for (var q = 0; q < reachList.length; q++) {
+      var h = reachList[q];
+      var sc = 0;
+      /* threat incoming on that hex */
+      sc -= th[D.cls][h] / 100 * val * (D.ind ? 0.70 : 0.42) / aggro;
+      /* progress toward the objective */
+      if (D.ind) sc -= Math.abs(objField[h] - ideal) * 7;
+      else sc += (stayCost - objField[h]) * 0.9;
+      /* drive on the enemy headquarters */
+      if (foeHqField) sc += (hqStay - foeHqField[h]) * hqPush;
+      /* supply situation */
+      if (supField) sc -= supField[h] * 0.25;
+      /* capture */
+      var cell = s.cells[h], T = HF.TERR[cell.t];
+      var capProgress = cell.capSide === side ? cell.cap : 0;
+      var hqHp = 40 + 20 * Math.max(0, T.cap - capProgress - 1);
+      if (D.cap && cell.t === 'HQ' && cell.own !== side &&
+          u.hp >= 40 && u.hp < hqHp) continue;
+      if (D.cap && u.hp >= 40 && T.cap && cell.own !== side) {
+        var cv = 14 + T.inc * 4 + (T.build ? 22 : 0) + (cell.t === 'HQ' ? 4000 : 0);
+        if (cell.capSide === side) cv += 40 + cell.cap * 260;   /* finish what we started */
+        sc += cv;
+      }
+      /* defending a contested own property */
+      if (D.cap && cell.own === side && contest.indexOf(h) >= 0) sc += 60;
+      /* being deep in the enemy rear is worth something even on open ground */
+      if (D.cap && foeHqField && foeHqField[h] < 130) sc += (130 - foeHqField[h]) * 0.08;
+      /* attack options from that hex */
+      var atkBest = null;
+      if (vuln.length) {
+        for (var v2 = 0; v2 < vuln.length; v2++) {
+          var V = vuln[v2], foe = V.foe;
+          if (foe.hp <= 0 || !HF.byId(s, foe.id)) continue;
+          var dd = HF.distIdx(s, h, foe.i);
+          if (dd < D.r0 || dd > D.r1) continue;
+          var fc = HF.forecast(s, u, foe, h);
+          if (!fc) continue;
+          var s2 = (fc.dmg / 100) * V.tv * 1.25 + (fc.dmg >= foe.hp ? V.tv * 0.55 : 0) -
+            (fc.counter / 100) * val * 0.75 - (fc.counter >= u.hp ? val * 0.55 : 0);
+          if (V.F.cls === 'AIR') s2 += 4;
+          /* clear the guard around the enemy headquarters */
+          if (HF.distIdx(s, foe.i, s.hq[1 - side]) <= 2) s2 += 10;
+          if (s2 > (atkBest ? atkBest.s2 : -1e9)) atkBest = { foe: foe, s2: s2 };
+        }
+      }
+      if (atkBest) sc += atkBest.s2 * aggro;
+      if (sc > best.sc) { best = { h: h, sc: sc, tgt: atkBest ? atkBest.foe : null }; }
+    }
+
+    /* blunder chance on easy */
+    if (dm.blunder > 0 && rng.chance(dm.blunder) && best.sc < 120) best = { h: u.i, sc: 0, tgt: null };
+
+    var moved = false;
+    if (best.h !== u.i) {
+      var mv = HF.doMove(s, u, best.h);
+      if (mv) { evs.push(mv); moved = true; }
+    }
+    if (best.tgt && !u.attacked && HF.byId(s, best.tgt.id) && u.hp > 0) {
+      if (HF.inRange(s, u, best.tgt, u.i)) {
+        var at = HF.doAttack(s, u, best.tgt, u.i);
+        if (at) evs.push(at);
+      }
+    }
+    /* engineer support */
+    if (u.hp > 0 && D.fort && !u.attacked) {
+      var needyNear = false;
+      for (var m2 = 0; m2 < mine.length; m2++) {
+        var w2 = mine[m2];
+        if (w2.id === u.id || !HF.byId(s, w2.id)) continue;
+        if (w2.fuel < HF.UNITS[w2.t].fuel * 5 && HF.distIdx(s, u.i, w2.i) <= 4) { needyNear = true; break; }
+      }
+      if (needyNear && HF.canDepot(s, u) && !s.cells[u.i].prop) evs.push(HF.doDepot(s, u));
+      else if (th[D.cls][u.i] > 45 && HF.canFort(s, u)) evs.push(HF.doFort(s, u));
+    }
+  }
+
+  /* ---------- production ---------- */
+  var emptyCells = buildCells.filter(function (i) { return !s.occ[i]; });
+  var guard = 0;
+  while (emptyCells.length && HF.countUnits(s, side) < s.capU && guard++ < 8) {
+    /* factories first (cheaper, land army first), then airfields */
+    emptyCells.sort(function (a, b) {
+      var ka = HF.TERR[s.cells[a].t].build === 'LAND' ? 0 : 1;
+      var kb = HF.TERR[s.cells[b].t].build === 'LAND' ? 0 : 1;
+      return ka - kb || a - b;
+    });
+    var built = false;
+    for (var ci = 0; ci < emptyCells.length && !built; ci++) {
+      var cell2 = emptyCells[ci];
+      if (s.occ[cell2]) continue;
+      var pick = HF.aiPickBuild(s, side, cell2);
+      if (!pick) continue;
+      /* spend in weight order but only on things we can actually afford */
+      var table = pick.table.slice().sort(function (a, b) { return b[1] - a[1]; });
+      var tid = null;
+      for (var t3 = 0; t3 < table.length; t3++) {
+        if (HF.UNITS[table[t3][0]].cost <= s.funds[side]) { tid = table[t3][0]; break; }
+      }
+      if (!tid) continue;
+      /* saving up: if the priciest useful system is affordable soon, do not waste money */
+      var pricey = HF.UNITS[table[0][0]].cost;
+      if (HF.countUnits(s, side) > 0 && HF.UNITS[tid].cost < pricey &&
+          s.funds[side] + HF.incomeOf(s, side).n >= pricey && rng.chance(0.55)) continue;
+      var ev2 = HF.doBuild(s, cell2, side, tid);
+      if (ev2) { evs.push(ev2); built = true; }
+    }
+    if (!built) break;
+    emptyCells = emptyCells.filter(function (i) { return !s.occ[i]; });
+  }
+  evs.push({ k: 'turnend', side: side });
+  return evs;
+};
+
+
+/* ==== part p07_render.js ==== */
+/* ===== HEXFRONT :: pixel-art rendering (canvas) ===== */
+(function () {
+  var V = HF.view = { cv: null, ctx: null, cam: { x: 0, y: 0, R: 20 }, dpr: 1, w: 0, h: 0, dirtyTerr: true, popups: [], fx: [], flash: 0, RMIN: 8, RMAX: 44 };
+
+  /* ---------- palette / baking ---------- */
+  var cache = {};
+  function art(key, side) {
+    var ck = key + ':' + side;
+    if (cache[ck]) return cache[ck];
+    var raw = HF.ART[key];
+    if (!raw) return null;
+    var rows = raw.split('/'), w = 0, r, c2;
+    for (r = 0; r < rows.length; r++) w = Math.max(w, rows[r].length);
+    var h = rows.length;
+    var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    var cx = cv.getContext('2d');
+    var tint = HF.SIDECOL[side] || HF.SIDECOL[0];
+    var pal = {
+      D: tint.d, M: tint.m, L: tint.l
+    };
+    for (var k in HF.PAL) pal[k] = (HF.PAL[k] === 'TEAM_D') ? tint.d : (HF.PAL[k] === 'TEAM_M') ? tint.m : (HF.PAL[k] === 'TEAM_L') ? tint.l : HF.PAL[k];
+    for (r = 0; r < h; r++) {
+      var row = rows[r];
+      for (c2 = 0; c2 < row.length; c2++) {
+        var ch = row.charAt(c2);
+        if (ch === '.' || ch === ' ') continue;
+        var col = pal[ch];
+        if (!col) continue;
+        cx.fillStyle = col;
+        cx.fillRect(c2, r, 1, 1);
+      }
+    }
+    cache[ck] = { cv: cv, w: w, h: h };
+    return cache[ck];
+  }
+  HF.bakeArt = art;
+
+  /* ---------- theme colours ---------- */
+  var THEME = {
+    plain: { p: '#6f8c4c', p2: '#7d9a58', road: '#8d8574', for: '#37562f', hill: '#7a8a55', mnt: '#6c6f6a' },
+    river: { p: '#6b8a52', p2: '#7a9a5e', road: '#8d8574', for: '#33512c', hill: '#76864f', mnt: '#6b6e69' },
+    woodriver: { p: '#5f7d4a', p2: '#6d8b55', road: '#877f6e', for: '#2c4a26', hill: '#6d7d48', mnt: '#676a66' },
+    forest: { p: '#57753f', p2: '#64834a', road: '#847c6b', for: '#28451f', hill: '#647440', mnt: '#626561' },
+    mountain: { p: '#7c8365', p2: '#888f70', road: '#8d8676', for: '#3d5630', hill: '#8a8763', mnt: '#7b7d78' },
+    desert: { p: '#c2a470', p2: '#d0b47f', road: '#9c8f74', for: '#5f6d38', hill: '#b0925f', mnt: '#96825f' },
+    coast: { p: '#8d9a5f', p2: '#9aa76c', road: '#9b9280', for: '#3f5c31', hill: '#8a8f5c', mnt: '#7d7f78' },
+    delta: { p: '#5f7f52', p2: '#6c8c5d', road: '#8a8270', for: '#2f4d28', hill: '#6a7c4a', mnt: '#666a63' },
+    urban: { p: '#828c6d', p2: '#8e9878', road: '#8f8878', for: '#3c5730', hill: '#7e8360', mnt: '#767a74' },
+    final: { p: '#6f7f57', p2: '#7c8c62', road: '#8d8574', for: '#33512b', hill: '#78854f', mnt: '#71736d' }
+  };
+  var WATER = ['#2c5c86', '#3f76a6', '#63a0c8'];
+
+  function hash(i, k) {
+    var x = (i * 2654435761) ^ (k * 40503);
+    x = (x ^ (x >>> 15)) >>> 0; x = Math.imul(x, 0x7feb352d);
+    x = (x ^ (x >>> 12)) >>> 0;
+    return (x % 1000) / 1000;
+  }
+
+  function hexPath(cx2, x, y, R) {
+    cx2.beginPath();
+    for (var i = 0; i < 6; i++) {
+      var a = Math.PI / 180 * (60 * i - 30);
+      var px = Math.round(x + R * Math.cos(a)), py = Math.round(y + R * Math.sin(a));
+      if (i === 0) cx2.moveTo(px, py); else cx2.lineTo(px, py);
+    }
+    cx2.closePath();
+  }
+  HF.hexPath = hexPath;
+
+  /* ---------- terrain layer ---------- */
+  var terr = null, terrKey = '';
+  function buildTerrain(s) {
+    var R = V.cam.R, hw = HF.hexW(R);
+    var W = Math.ceil(hw * (s.W + 0.5)) + 2, H = Math.ceil(1.5 * R * s.H + 0.5 * R) + 2;
+    if (!terr) terr = document.createElement('canvas');
+    terr.width = W; terr.height = H;
+    var g = terr.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    var th = THEME[s.theme] || THEME.plain;
+    g.fillStyle = th.p; g.fillRect(0, 0, W, H);
+    for (var i = 0; i < s.cells.length; i++) {
+      var c = i % s.W, r = (i / s.W) | 0;
+      var x = Math.round(HF.hexCX(s, c, r, R)), y = Math.round(HF.hexCY(s, r, R));
+      var cell = s.cells[i], T = cell.t;
+      var base = th.p, alt = th.p2;
+      if (T === 'ROAD') { base = th.road; alt = '#a49b88'; }
+      else if (T === 'FOREST') { base = th.for; alt = '#4e7038'; }
+      else if (T === 'HILL') { base = th.hill; alt = '#9aa06a'; }
+      else if (T === 'MOUNTAIN') { base = th.mnt; alt = '#93968f'; }
+      else if (T === 'RIVER' || T === 'LAKE') { base = WATER[0]; alt = WATER[1]; }
+      else if (T === 'BRIDGE') { base = WATER[0]; alt = '#b99b64'; }
+      else if (T === 'CITY') { base = '#737d8c'; alt = '#a4afbd'; }
+      else if (T === 'FARM') { base = '#a88e4e'; alt = '#d1bc76'; }
+      else if (T === 'FACTORY') { base = '#796d62'; alt = '#b7a18b'; }
+      else if (T === 'AIRFIELD') { base = '#647d87'; alt = '#b1c9ca'; }
+      else if (T === 'DEPOT') { base = '#80785d'; alt = '#d0bf87'; }
+      else if (T === 'HQ') { base = '#596b7c'; alt = '#a9bdcd'; }
+      else if (T === 'FORT') { base = '#6b6455'; alt = '#877e68'; }
+      hexPath(g, x, y, R);
+      g.fillStyle = base; g.fill();
+      /* pixel texture */
+      g.save(); hexPath(g, x, y, R); g.clip();
+      if (T === 'PLAIN') {
+        g.fillStyle = alt;
+        for (var k = 0; k < 5; k++) {
+          var hx = Math.round(x - R + hash(i, k) * 2 * R), hy = Math.round(y - R + hash(i, k + 9) * 2 * R);
+          g.fillRect(hx, hy, 2, 1);
+        }
+        if (hash(i, 77) > 0.72) drawArt(g, 'bump', x, y + 2, 1, 0);
+      } else if (T === 'ROAD') {
+        g.fillStyle = '#6e6757';
+        g.fillRect(x - R, y - 2, 2 * R, 4);
+        g.fillStyle = alt;
+        for (var k2 = 0; k2 < 3; k2++) g.fillRect(x - R + 3 + k2 * 6, y - 1, 2, 2);
+      } else if (T === 'FOREST') {
+        var treeScale = HF.clamp(R / 16, 0.6, 2.2);
+        drawArt(g, 'tree', x - Math.round(R * 0.32), y + Math.round(R * 0.2), treeScale, 0);
+        drawArt(g, 'tree', x + Math.round(R * 0.34), y + Math.round(R * 0.32), treeScale, 0);
+        if (R > 12) drawArt(g, 'tree', x + Math.round(R * 0.02), y - Math.round(R * 0.25), treeScale, 0);
+      } else if (T === 'HILL') {
+        g.strokeStyle = alt; g.lineWidth = Math.max(1, Math.round(R / 14));
+        for (var contour = 0; contour < 3; contour++) {
+          var dy = Math.round((contour - 1) * R * 0.3);
+          g.beginPath(); g.moveTo(x - R * 0.65, y + dy + R * 0.2);
+          g.lineTo(x - R * 0.25, y + dy); g.lineTo(x + R * 0.25, y + dy);
+          g.lineTo(x + R * 0.65, y + dy + R * 0.2); g.stroke();
+        }
+      } else if (T === 'MOUNTAIN') {
+        g.fillStyle = '#4d5559';
+        g.beginPath(); g.moveTo(x - R * 0.8, y + R * 0.55); g.lineTo(x - R * 0.1, y - R * 0.7);
+        g.lineTo(x + R * 0.7, y + R * 0.55); g.closePath(); g.fill();
+        g.fillStyle = alt;
+        g.beginPath(); g.moveTo(x - R * 0.1, y - R * 0.7); g.lineTo(x + R * 0.7, y + R * 0.55);
+        g.lineTo(x + R * 0.15, y + R * 0.55); g.closePath(); g.fill();
+        g.fillStyle = '#d1d6d2';
+        g.beginPath(); g.moveTo(x - R * 0.1, y - R * 0.7); g.lineTo(x + R * 0.18, y - R * 0.25);
+        g.lineTo(x - R * 0.1, y - R * 0.36); g.lineTo(x - R * 0.32, y - R * 0.27); g.closePath(); g.fill();
+      } else if (T === 'RIVER' || T === 'LAKE') {
+        g.fillStyle = alt;
+        for (var k3 = 0; k3 < 4; k3++) {
+          var wx = Math.round(x - R * 0.7 + hash(i, k3) * R * 1.2), wy = Math.round(y - R * 0.6 + hash(i, k3 + 5) * R * 1.3);
+          g.fillRect(wx, wy, 3, 1);
+        }
+        g.fillStyle = WATER[2];
+        if (T === 'RIVER') {
+          for (var wave = -1; wave <= 1; wave++)
+            g.fillRect(Math.round(x - R * 0.55 + (wave & 1) * R * 0.2), Math.round(y + wave * R * 0.33), Math.max(3, Math.round(R * 0.65)), 1);
+        } else {
+          g.fillRect(Math.round(x - R * 0.35), Math.round(y - R * 0.15), Math.max(3, Math.round(R * 0.7)), 1);
+          g.fillRect(Math.round(x - R * 0.2), Math.round(y + R * 0.15), Math.max(2, Math.round(R * 0.4)), 1);
+        }
+      } else if (T === 'BRIDGE') {
+        g.fillStyle = '#8b6f43';
+        g.fillRect(x - Math.round(R * 0.75), y - Math.round(R * 0.28), Math.round(R * 1.5), Math.round(R * 0.56));
+        g.fillStyle = '#c7a870';
+        g.fillRect(x - Math.round(R * 0.7), y - Math.round(R * 0.2), Math.round(R * 1.4), 2);
+        g.fillStyle = '#6d5533';
+        for (var k4 = -2; k4 <= 2; k4++) g.fillRect(x + k4 * Math.round(R * 0.3), y - Math.round(R * 0.25), 1, Math.round(R * 0.5));
+      } else if (T === 'FORT') {
+        g.strokeStyle = '#4a4335'; g.lineWidth = 2;
+        hexPath(g, x, y, Math.round(R * 0.72)); g.stroke();
+        g.fillStyle = '#8d8168';
+        g.fillRect(x - 4, y - 1, 8, 3);
+        g.fillRect(x - 1, y - 4, 3, 8);
+      } else if (T === 'FARM') {
+        g.strokeStyle = alt; g.lineWidth = 1;
+        for (var row = -2; row <= 2; row++) {
+          g.beginPath(); g.moveTo(x - R, y + row * R * 0.32 + R * 0.35);
+          g.lineTo(x + R, y + row * R * 0.32 - R * 0.35); g.stroke();
+        }
+      } else if (T === 'AIRFIELD') {
+        g.fillStyle = '#3d5059'; g.fillRect(x - R, y - R * 0.2, R * 2, R * 0.4);
+        g.fillStyle = alt;
+        for (var dash = -1; dash <= 1; dash++) g.fillRect(Math.round(x + dash * R * 0.48 - R * 0.15), y, Math.max(2, Math.round(R * 0.3)), 1);
+      } else if (T === 'CITY') {
+        g.fillStyle = alt;
+        for (var block = -1; block <= 1; block++) {
+          g.fillRect(Math.round(x + block * R * 0.45 - R * 0.13), Math.round(y - R * 0.52), Math.max(2, Math.round(R * 0.26)), Math.max(2, Math.round(R * 0.3)));
+        }
+      } else {
+        g.fillStyle = alt;
+        g.fillRect(x - Math.round(R * 0.8), y + Math.round(R * 0.3), Math.round(R * 1.6), Math.round(R * 0.4));
+      }
+      g.restore();
+      /* hex grid line */
+      hexPath(g, x, y, R);
+      g.strokeStyle = 'rgba(10,14,18,0.55)'; g.lineWidth = 1; g.stroke();
+      if (R >= 12) {
+        g.beginPath();
+        g.moveTo(Math.round(x - hw * 0.43), Math.round(y - R * 0.23));
+        g.lineTo(Math.round(x), Math.round(y - R * 0.73));
+        g.lineTo(Math.round(x + hw * 0.43), Math.round(y - R * 0.23));
+        g.strokeStyle = 'rgba(255,255,255,0.09)'; g.stroke();
+      }
+      /* property building + owner ring */
+      if (cell.prop) {
+        var sp = { CITY: 'city', FARM: 'farm', FACTORY: 'factory', AIRFIELD: 'hangar', DEPOT: 'depot', HQ: 'hq' }[T];
+        if (sp) drawArt(g, sp, x, y + Math.round(R * 0.1), HF.clamp(R / 16, 0.62, 1.5),
+          cell.own < 0 ? 0 : cell.own, cell.own < 0, Math.round(hw * 1.15));
+        if (cell.own >= 0) {
+          var col = HF.SIDECOL[cell.own];
+          hexPath(g, x, y, R - 1);
+          g.strokeStyle = col.m; g.lineWidth = Math.max(1, Math.round(R * 0.1)); g.stroke();
+        }
+      }
+    }
+    V.dirtyTerr = true;
+  }
+  function ownershipSig(s) {
+    var v = 0;
+    for (var i = 0; i < s.cells.length; i++) { v = (v * 31 + s.cells[i].own * 7 + s.cells[i].cap + (HF.TCODE[s.cells[i].t] || 0)) >>> 0; }
+    return v;
+  }
+  function drawArt(g, key, cx2x, cy, scale, side, grey, maxW) {
+    var a = art(key, side || 0);
+    if (!a) return null;
+    var z = (scale === undefined || scale === null) ? 1 : scale;
+    var w = a.w * z, h = a.h * z;
+    if (maxW && w > maxW) { var f = maxW / w; w = maxW; h *= f; }
+    w = Math.max(1, Math.round(w)); h = Math.max(1, Math.round(h));
+    if (grey) { g.save(); g.globalAlpha = 0.85; }
+    g.drawImage(a.cv, Math.round(cx2x - w / 2), Math.round(cy - h / 2), w, h);
+    if (grey) g.restore();
+    return [w, h];
+  }
+  HF.drawArtAt = drawArt;
+
+  /* ---------- camera ---------- */
+  V.mapWH = function (s) {
+    var R = V.cam.R, hw = HF.hexW(R);
+    return [hw * (s.W + 0.5), 1.5 * R * s.H + 0.5 * R];
+  };
+  V.fit = function (s, pad) {
+    pad = pad || 8;
+    var r1 = Math.floor((V.h - pad * 2) / (1.5 * s.H + 0.5));
+    var r2 = Math.floor((V.w - pad * 2) / (Math.sqrt(3) * (s.W + 0.5)));
+    V.cam.R = HF.clamp(Math.max(V.RMIN, Math.min(r1, r2)), V.RMIN, V.RMAX);
+    V.snap(s);
+  };
+  V.snap = function (s) {
+    V.cam.R = V.cam.R | 0;
+    var d = V.mapWH(s), mw = d[0], mh = d[1];
+    if (mw <= V.w) V.cam.x = (mw - V.w) / 2;
+    else V.cam.x = HF.clamp(V.cam.x, 0, mw - V.w);
+    if (mh <= V.h) V.cam.y = (mh - V.h) / 2;
+    else V.cam.y = HF.clamp(V.cam.y, 0, mh - V.h);
+    V.dirtyTerr = true;
+  };
+  V.hexXY = function (s, i) {
+    var R = V.cam.R;
+    var c = i % s.W, r = (i / s.W) | 0;
+    return [HF.hexCX(s, c, r, R), HF.hexCY(s, r, R)];
+  };
+  V.center = function (s, i) {
+    var p = V.hexXY(s, i);
+    V.cam.x = p[0] - V.w / 2;
+    V.cam.y = p[1] - V.h / 2;
+    V.snap(s);
+  };
+  V.screen = function (s, i) { var p = V.hexXY(s, i); return [p[0] - V.cam.x, p[1] - V.cam.y]; };
+  V.pick = function (s, sx, sy) {
+    var x = sx + V.cam.x, y = sy + V.cam.y, R = V.cam.R, best = -1, bd = 1e9;
+    var cand = HF.pxToHex(s, x, y, R);
+    if (cand >= 0) {
+      var p = V.hexXY(s, cand);
+      bd = (p[0] - x) * (p[0] - x) + (p[1] - y) * (p[1] - y);
+      best = cand;
+    }
+    return best;
+  };
+
+  /* ---------- effects ---------- */
+  V.pop = function (s, i, txt, col, dy) {
+    var p = V.hexXY(s, i);
+    V.popups.push({ x: p[0], y: p[1] - (dy || 10), txt: txt, col: col || '#fff', t: 0, life: 900 });
+  };
+  V.boom = function (s, i) { V.fx.push({ i: i, t: 0, life: 460, k: 'boom' }); };
+  V.hit = function (s, a, b) { V.fx.push({ a: a, b: b, t: 0, life: 260, k: 'shot' }); };
+
+  /* ---------- frame ---------- */
+  V.resize = function () {
+    var box = V.cv.parentNode.getBoundingClientRect();
+    V.dpr = Math.min(2, window.devicePixelRatio || 1);
+    V.w = Math.max(80, Math.round(box.width));
+    V.h = Math.max(80, Math.round(box.height));
+    V.cv.width = Math.round(V.w * V.dpr);
+    V.cv.height = Math.round(V.h * V.dpr);
+    V.cv.style.width = V.w + 'px';
+    V.cv.style.height = V.h + 'px';
+    V.ctx = V.cv.getContext('2d');
+    V.ctx.setTransform(V.dpr, 0, 0, V.dpr, 0, 0);
+    V.ctx.imageSmoothingEnabled = false;
+    V.dirtyTerr = true;
+  };
+
+  V.draw = function (s, ui) {
+    var g = V.ctx;
+    if (!g) return;
+    g.setTransform(V.dpr, 0, 0, V.dpr, 0, 0);
+    g.imageSmoothingEnabled = false;
+    var th = THEME[s.theme] || THEME.plain;
+    g.fillStyle = '#0a0e13';
+    g.fillRect(0, 0, V.w, V.h);
+    var key = s.stageIdx + ':' + V.cam.R + ':' + ownershipSig(s);
+    if (V.dirtyTerr || key !== terrKey) { buildTerrain(s); V.dirtyTerr = false; terrKey = key; }
+    g.save();
+    g.translate(-Math.round(V.cam.x), -Math.round(V.cam.y));
+
+    /* terrain bitmap */
+    g.drawImage(terr, 0, 0);
+
+    /* capture pips */
+    for (var i = 0; i < s.cells.length; i++) {
+      var cell = s.cells[i];
+      if (!cell.cap || cell.capSide < 0) continue;
+      var p = V.hexXY(s, i), R = V.cam.R;
+      var need = HF.TERR[cell.t].cap;
+      for (var q = 0; q < need; q++) {
+        g.fillStyle = 'rgba(8,12,16,0.8)';
+        g.fillRect(Math.round(p[0] - need * 3 + q * 6) - 1, Math.round(p[1] + R * 0.62) - 1, 7, 5);
+        g.fillStyle = q < cell.cap ? HF.SIDECOL[cell.capSide].l : 'rgba(255,255,255,0.25)';
+        g.fillRect(Math.round(p[0] - need * 3 + q * 6), Math.round(p[1] + R * 0.62), 5, 3);
+      }
+    }
+
+    /* range overlays */
+    if (ui && ui.moveSet) {
+      var R2 = V.cam.R;
+      for (var m = 0; m < s.cells.length; m++) {
+        if (!ui.moveSet[m]) continue;
+        var pm = V.hexXY(s, m);
+        hexPath(g, pm[0], pm[1], R2 - 1);
+        g.fillStyle = ui.moveCost && ui.moveCost[m] >= 0 ? 'rgba(80,200,120,0.24)' : 'rgba(80,200,120,0.12)';
+        g.fill();
+        g.strokeStyle = 'rgba(158,239,173,0.5)'; g.lineWidth = 1; g.stroke();
+      }
+    }
+    if (ui && ui.atkSet) {
+      var R3 = V.cam.R;
+      for (var m2 = 0; m2 < s.cells.length; m2++) {
+        if (!ui.atkSet[m2]) continue;
+        var pm2 = V.hexXY(s, m2);
+        hexPath(g, pm2[0], pm2[1], R3 - 1);
+        g.fillStyle = 'rgba(190,55,42,0.12)'; g.fill();
+        g.strokeStyle = 'rgba(240,90,70,0.85)'; g.lineWidth = 1; g.stroke();
+      }
+    }
+    if (ui && ui.hlFrom >= 0) {
+      var pf = V.hexXY(s, ui.hlFrom);
+      hexPath(g, pf[0], pf[1], V.cam.R - 1);
+      g.strokeStyle = 'rgba(255,220,120,0.9)'; g.lineWidth = 2; g.stroke();
+    }
+
+    /* units */
+    var order = s.units.slice().sort(function (a, b) { return (a.i % 3) - (b.i % 3) || a.i - b.i; });
+    for (var u2 = 0; u2 < order.length; u2++) {
+      var u = order[u2], D = HF.UNITS[u.t];
+      var pos = null;
+      if (ui && ui.anim && ui.anim.moving && ui.anim.moving.id === u.id) pos = ui.anim.moving.xy;
+      var pp = pos || V.hexXY(s, u.i);
+      var R4 = V.cam.R;
+      /* plate */
+      hexPath(g, pp[0], pp[1], R4 * 0.86);
+      g.fillStyle = 'rgba(8,12,16,0.42)'; g.fill();
+      g.strokeStyle = HF.SIDECOL[u.side].m; g.lineWidth = Math.max(1, Math.round(R4 * 0.08)); g.stroke();
+      var a = art(D.sp, u.side);
+      if (a) {
+        var scale = (D.cls === 'AIR') ? 0.62 : 1;
+        var px = Math.max(1, Math.round(R4 / 12));
+        var w = Math.round(a.w * scale * px), h = Math.round(a.h * scale * px);
+        var maxH = Math.round(R4 * 1.7), maxW = Math.round(HF.hexW(R4) * (D.cls === 'AIR' ? 1.75 : 1.06));
+        if (w > maxW || h > maxH) { var f = Math.min(maxW / w, maxH / h); w = Math.max(1, Math.round(w * f)); h = Math.max(1, Math.round(h * f)); }
+        if (u.acted && u.attacked && !(ui && ui.anim && ui.anim.moving && ui.anim.moving.id === u.id)) g.globalAlpha = 0.62;
+        g.drawImage(a.cv, Math.round(pp[0] - w / 2), Math.round(pp[1] - h / 2), w, h);
+        g.globalAlpha = 1;
+      }
+      /* Unit codes remain visible even when the map is zoomed out. */
+      var badgeFont = HF.clamp(Math.round(R4 * 0.45), 6, 10);
+      g.font = 'bold ' + badgeFont + 'px ui-monospace,Consolas,monospace';
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      var badgeW = Math.min(Math.round(HF.hexW(R4) * 0.9), Math.ceil(g.measureText(D.s).width) + 4);
+      var badgeY = Math.round(pp[1] - R4 * 0.78);
+      g.fillStyle = 'rgba(8,12,16,0.92)';
+      g.fillRect(Math.round(pp[0] - badgeW / 2), badgeY, badgeW, badgeFont + 3);
+      g.fillStyle = HF.SIDECOL[u.side].l;
+      g.fillRect(Math.round(pp[0] - badgeW / 2), badgeY, badgeW, 1);
+      g.fillStyle = '#ffffff';
+      g.fillText(D.s, Math.round(pp[0]), badgeY + (badgeFont + 4) / 2, badgeW - 2);
+      g.textBaseline = 'alphabetic';
+      /* hp bar */
+      if (u.hp < 100) {
+        var bw = Math.round(R4 * 1.1);
+        g.fillStyle = '#10161c'; g.fillRect(pp[0] - bw / 2, pp[1] + R4 * 0.62, bw, 3);
+        g.fillStyle = u.hp > 60 ? '#67c96a' : (u.hp > 30 ? '#e0b73c' : '#d9584a');
+        g.fillRect(pp[0] - bw / 2, pp[1] + R4 * 0.62, Math.max(1, Math.round(bw * u.hp / 100)), 3);
+      }
+      /* supply warnings */
+      if (D.ammo >= 0 && u.ammo === 0) { g.fillStyle = '#d9584a'; g.fillRect(pp[0] + R4 * 0.5, pp[1] + R4 * 0.3, 3, 3); }
+      if (u.fuel < HF.UNITS[u.t].fuel * 5) { g.fillStyle = '#e0b73c'; g.fillRect(pp[0] - R4 * 0.65, pp[1] + R4 * 0.3, 3, 3); }
+      if (u.car.length) { g.fillStyle = '#cfe6f7'; g.fillRect(pp[0] - 2, pp[1] + R4 * 0.48, 4, 2); }
+      if (s.side === u.side && !u.acted && !u.attacked && !s.over && s.side === 0) {
+        g.fillStyle = 'rgba(255,255,255,0.85)';
+        g.fillRect(pp[0] + R4 * 0.45, pp[1] - R4 * 0.28, 2, 3);
+      }
+    }
+
+    /* selection cursor */
+    if (ui && ui.sel >= 0) {
+      var ps = V.hexXY(s, ui.sel), t = (Date.now() % 700) / 700;
+      hexPath(g, ps[0], ps[1], V.cam.R * (0.9 + 0.06 * Math.sin(t * 6.283)));
+      g.strokeStyle = '#ffe58a'; g.lineWidth = 2; g.stroke();
+    }
+    if (ui && ui.hover >= 0) {
+      var ph = V.hexXY(s, ui.hover);
+      hexPath(g, ph[0], ph[1], V.cam.R - 2);
+      g.strokeStyle = 'rgba(255,255,255,0.35)'; g.lineWidth = 1; g.stroke();
+    }
+
+    /* fx */
+    for (var f = V.fx.length - 1; f >= 0; f--) {
+      var e = V.fx[f];
+      e.t += V.dt || 16;
+      if (e.t > e.life) { V.fx.splice(f, 1); continue; }
+      var pr = e.t / e.life;
+      if (e.k === 'boom') {
+        var pi = V.hexXY(s, e.i);
+        var frame = ['boom0', 'boom1', 'boom2'][Math.min(2, Math.floor(pr * 3))];
+        var ba = art(frame, 0);
+        var sz = Math.round(V.cam.R * (1.3 + pr * 0.7));
+        if (ba) g.drawImage(ba.cv, Math.round(pi[0] - sz / 2), Math.round(pi[1] - sz / 2), sz, sz);
+      } else if (e.k === 'shot') {
+        var pa = V.hexXY(s, e.a), pb = V.hexXY(s, e.b);
+        var progress = Math.min(1, pr * 2.2);
+        g.strokeStyle = 'rgba(255,240,180,' + (1 - pr).toFixed(2) + ')';
+        g.lineWidth = 2;
+        g.beginPath(); g.moveTo(pa[0], pa[1]); g.lineTo(pa[0] + (pb[0] - pa[0]) * progress, pa[1] + (pb[1] - pa[1]) * progress); g.stroke();
+        if (progress === 1) {
+          var spark = Math.max(2, Math.round(V.cam.R * (0.18 + pr * 0.25)));
+          g.fillStyle = 'rgba(255,220,130,' + (1 - pr).toFixed(2) + ')';
+          g.fillRect(Math.round(pb[0] - spark), Math.round(pb[1] - 1), spark * 2 + 1, 3);
+          g.fillRect(Math.round(pb[0] - 1), Math.round(pb[1] - spark), 3, spark * 2 + 1);
+        }
+      }
+    }
+    /* popups */
+    for (var q2 = V.popups.length - 1; q2 >= 0; q2--) {
+      var pp2 = V.popups[q2];
+      pp2.t += V.dt || 16;
+      if (pp2.t > pp2.life) { V.popups.splice(q2, 1); continue; }
+      var pr2 = pp2.t / pp2.life;
+      g.globalAlpha = Math.max(0, 1 - pr2 * pr2);
+      g.font = 'bold ' + Math.round(9 + V.cam.R * 0.28) + 'px ui-monospace,Consolas,monospace';
+      g.textAlign = 'center';
+      g.fillStyle = '#0b0f14';
+      g.fillText(pp2.txt, pp2.x + 1, pp2.y - pr2 * 16 + 1);
+      g.fillStyle = pp2.col;
+      g.fillText(pp2.txt, pp2.x, pp2.y - pr2 * 16);
+      g.globalAlpha = 1;
+    }
+    g.restore();
+    /* vignette + edge fade keeps the HUD readable */
+    var gr = g.createLinearGradient(0, 0, 0, V.h);
+    gr.addColorStop(0, 'rgba(6,9,13,0.55)'); gr.addColorStop(0.16, 'rgba(6,9,13,0)');
+    gr.addColorStop(0.84, 'rgba(6,9,13,0)'); gr.addColorStop(1, 'rgba(6,9,13,0.5)');
+    g.fillStyle = gr; g.fillRect(0, 0, V.w, V.h);
+  };
+})();
+
+
+/* ==== part p08_ui.js ==== */
+/* ===== HEXFRONT :: UI layer (DOM, input, screens) ===== */
+(function () {
+  var U = HF.ui = {
+    st: null, sel: -1, selId: 0, infoCell: -1, phase: 'idle', busy: false, hist: [], hover: -1,
+    moveSet: null, moveCost: null, atkSet: null, hlFrom: -1, cheat: false,
+    el: {}, prof: null, queue: [], aiThink: 0, started: 0
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var T = HF.T, L = HF.L;
+
+  /* ---------- small helpers ---------- */
+  function esc(x) { return String(x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  U.esc = esc;
+  function spriteCanvas(uid, side, sc) {
+    var D = HF.UNITS[uid], a = HF.bakeArt(D.sp, side);
+    if (!a) return null;
+    var s = sc || 3;
+    var wide = (D.cls === 'AIR');
+    var w = Math.round(a.w * (wide ? 0.62 : 1) * s), h = Math.round(a.h * (wide ? 0.62 : 1) * s);
+    var cv = document.createElement('canvas');
+    cv.width = w; cv.height = h; cv.className = 'spr';
+    var g = cv.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    g.drawImage(a.cv, 0, 0, w, h);
+    return cv;
+  }
+  U.spriteCanvas = spriteCanvas;
+  U.toast = function (msg, ms) {
+    var t = U.el.toast;
+    t.textContent = msg;
+    t.classList.add('on');
+    clearTimeout(U._tt);
+    U._tt = setTimeout(function () { t.classList.remove('on'); }, ms || 1700);
+  };
+  U.logHtml = function (e) {
+    var s = T(e.k, e.v);
+    return s;
+  };
+
+  /* ---------- boot / screens ---------- */
+  U.init = function () {
+    ['top', 'bot', 'cv', 'panel', 'acts', 'logList', 'toast', 'modal', 'sheet', 'hintLine', 'zoom', 'rotate', 'rotateGo'].forEach(function (id) { U.el[id] = $(id); });
+    U.prof = HF.loadProfile();
+    HF.lang = HF.pickLang(U.prof.lang);
+    HF.soundOn = U.prof.sound !== 0;
+    HF.musicOn = U.prof.music !== 0;
+    U.el.cv = $('cv');
+    HF.view.cv = U.el.cv;
+    HF.view.resize();
+    wireInput();
+    wireChrome();
+    applyLang();
+    showTitle();
+  };
+
+  function applyLang() {
+    document.documentElement.lang = HF.lang === 'ja' ? 'ja' : (HF.lang === 'zh' ? 'zh-CN' : 'en');
+    var nodes = document.querySelectorAll('[data-t]');
+    for (var i = 0; i < nodes.length; i++) {
+      var k = nodes[i].getAttribute('data-t');
+      var v = T(k);
+      if (v.indexOf('<') >= 0) nodes[i].innerHTML = v; else nodes[i].textContent = v;
+    }
+    var tips = document.querySelectorAll('[data-tt]');
+    for (var j = 0; j < tips.length; j++) tips[j].title = T(tips[j].getAttribute('data-tt'));
+    U.el.bLang && (U.el.bLang.textContent = HF.lang.toUpperCase());
+    U.el.bSound && (U.el.bSound.textContent = HF.soundOn ? '♪' : '✕');
+    U.el.bSound && U.el.bSound.classList.toggle('off', !HF.soundOn);
+    U.el.bSound && U.el.bSound.setAttribute('aria-label', T('set.sound') + ': ' + T(HF.soundOn ? 'set.on' : 'set.off'));
+    U.el.bSound && U.el.bSound.setAttribute('aria-pressed', HF.soundOn ? 'true' : 'false');
+    if (U.st) {
+      refreshHud(); renderLog();
+      var infoUnit = U.selId ? HF.byId(U.st, U.selId) : (U.infoCell >= 0 ? HF.unitAt(U.st, U.infoCell) : null);
+      refreshPanel(infoUnit, U.infoCell);
+    }
+    if (U.openScreen) renderScreen(U.openScreen);
+  }
+  U.applyLang = applyLang;
+
+  /* ---------- chrome buttons ---------- */
+  function wireChrome() {
+    U.el.bSound = $('bSound'); U.el.bLang = $('bLang'); U.el.bMenu = $('bMenu');
+    U.el.bEnd = $('bEnd'); U.el.bUndo = $('bUndo'); U.el.bFit = $('bFit');
+    U.el.bIn = $('bIn'); U.el.bOut = $('bOut');
+    U.el.bSound.onclick = function () {
+      HF.soundOn = !HF.soundOn; U.prof.sound = HF.soundOn ? 1 : 0; HF.saveProfile(U.prof);
+      U.el.bSound.textContent = HF.soundOn ? '♪' : '✕';
+      U.el.bSound.classList.toggle('off', !HF.soundOn);
+      U.el.bSound.setAttribute('aria-label', T('set.sound') + ': ' + T(HF.soundOn ? 'set.on' : 'set.off'));
+      U.el.bSound.setAttribute('aria-pressed', HF.soundOn ? 'true' : 'false');
+      if (HF.soundOn) HF.sfx('click');
+      U.toast(T('set.sound') + ': ' + T(HF.soundOn ? 'set.on' : 'set.off'));
+    };
+    U.el.bLang.onclick = function () {
+      var i = HF.LANGS.indexOf(HF.lang);
+      HF.lang = HF.LANGS[(i + 1) % HF.LANGS.length];
+      U.prof.lang = HF.lang; HF.saveProfile(U.prof);
+      applyLang(); HF.sfx('click');
+      U.toast(HF.LANGNAME[HF.lang]);
+    };
+    U.el.bMenu.onclick = function () { HF.sfx('click'); openMenu(); };
+    U.el.bEnd.onclick = function () { endTurn(); };
+    U.el.bUndo.onclick = function () { undo(); };
+    U.el.bFit.onclick = function () { HF.view.fit(U.st); HF.sfx('click'); };
+    U.el.bIn.onclick = function () { zoom(1); };
+    U.el.bOut.onclick = function () { zoom(-1); };
+    $('rotateGo').onclick = function () { document.getElementById('rotate').style.display = 'none'; };
+    window.addEventListener('resize', function () { onResize(); });
+    window.addEventListener('orientationchange', function () { setTimeout(onResize, 260); });
+    window.addEventListener('keydown', onKey);
+    document.addEventListener('pointerdown', function () { if (HF.musicOn) HF.audioArm(); });
+    document.addEventListener('keydown', function () { if (HF.musicOn) HF.audioArm(); });
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) HF.musicPause();
+      else if (HF.audio.ctx && HF.musicOn) HF.audioArm();
+    });
+    window.addEventListener('pagehide', function () { HF.musicPause(); if (U.st && !U.st.over) save(); });
+    window.addEventListener('pageshow', function () { if (HF.audio.ctx && HF.musicOn) HF.audioArm(); });
+  }
+  function onResize() {
+    HF.view.resize();
+    if (U.st) HF.view.snap(U.st);
+    $('rotate').style.display = (window.innerHeight > window.innerWidth * 1.05 && window.innerWidth < 820) ? 'flex' : 'none';
+  }
+  function zoom(dir) {
+    if (!U.st) return;
+    var old = HF.view.cam.R;
+    HF.view.cam.R = HF.clamp(old + dir * (old > 16 ? 3 : 2), HF.view.RMIN, HF.view.RMAX);
+    HF.view.snap(U.st);
+    HF.sfx('click');
+  }
+  U.zoom = zoom;
+
+  /* ---------- title / stage select ---------- */
+  function showTitle() {
+    U.st = null; U.openScreen = null; closeSheet();
+    var sv = HF.readSave();
+    var html = '<div class="title"><div class="lg">HEXFRONT</div><div class="sub">' + T('screen.sub') + '</div></div>';
+    html += '<div class="col">';
+    if (sv) html += '<button class="big primary" data-act="resume">' + T('b.continue') + ' <span class="mut">' + T('title.saved', { n: sv.st.turn }) + '</span></button>';
+    html += '<button class="big" data-act="stages">' + T('b.new') + '</button>';
+    html += '<div class="row2"><button data-act="stages">' + T('b.stages') + '</button><button data-act="codex">' + T('b.codex') + '</button></div>';
+    html += '<div class="row2"><button data-act="help">' + T('b.help') + '</button><button data-act="set">' + T('b.settings') + '</button></div>';
+    html += '</div>';
+    html += '<div class="foot mut">' + T('title.progress', { n: U.prof.unlocked, m: HF.STAGES.length }) +
+      ' · ' + (HF.store.available() ? T('set.storage.ok') : T('set.storage.no')) + '</div>';
+    openSheet(html, 'title');
+  }
+  U.showTitle = showTitle;
+  U.renderScreen = renderScreen;
+
+  function renderScreen(kind) {
+    if (kind === 'stages') renderStages();
+    else if (kind === 'codex') renderCodex();
+    else if (kind === 'help') renderHelp();
+    else if (kind === 'set') renderSettings();
+    else if (kind === 'menu') renderMenu();
+    else if (kind === 'result') renderResult();
+    else if (kind === 'title') showTitle();
+  }
+
+  function renderStages() {
+    U.openScreen = 'stages';
+    var h = '<div class="sh"><h2>' + T('stages.title') + '</h2><div class="diffs">';
+    ['easy', 'normal', 'hard'].forEach(function (d) {
+      h += '<button class="chip' + (U.prof.diff === d ? ' on' : '') + '" data-act="diff" data-arg="' + d + '">' + T('diff.' + d) + '</button>';
+    });
+    h += '</div></div><div class="grid stages">';
+    for (var i = 0; i < HF.STAGES.length; i++) {
+      var st = HF.STAGES[i], locked = (i + 1) > U.prof.unlocked;
+      var best = U.prof.best[st.id];
+      h += '<button class="card' + (locked ? ' lock' : '') + '" ' + (locked ? 'disabled' : 'data-act="play" data-arg="' + i + '"') + '>';
+      h += '<div class="cid">' + T('hud.stage') + ' ' + st.id + '</div>';
+      h += '<div class="cnm">' + esc(L(st.n)) + '</div>';
+      h += '<div class="cinfo">' + T('stages.size', { w: st.sz[0], h: st.sz[1] }) + ' · ' + T('stages.turnlimit', { n: st.limit }) + '</div>';
+      h += '<div class="cbr">' + esc(L(st.b)) + '</div>';
+      h += '<div class="cfoot">' + (locked ? '<span class="mut">' + T('stages.locked') + '</span>' :
+        (best ? '<span class="ok">' + T('stages.best', { n: best.turns }) + '</span>' : '<span class="mut">' + T('stages.norec') + '</span>')) + '</div>';
+      h += '</button>';
+    }
+    h += '</div><div class="btnrow"><button data-act="close">' + T('b.back') + '</button></div>';
+    openSheet(h, 'stages');
+  }
+
+  function renderHelp() {
+    U.openScreen = 'help';
+    var h = '<h2>' + T('help.title') + '</h2><div class="scroll">';
+    for (var i = 0; i < 8; i++) {
+      var t = T('help.t' + i), b = T('help.b' + i);
+      if (!t || t === 'help.t' + i) continue;
+      h += '<h3>' + t + '</h3><p>' + b.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>') + '</p>';
+    }
+    h += '<h3>' + T('help.t7') + '</h3>' + T('help.tab');
+    h += '</div><div class="btnrow"><button data-act="close">' + T('b.close') + '</button></div>';
+    openSheet(h, 'help');
+  }
+
+  function renderCodex() {
+    U.openScreen = 'codex';
+    var tiers = U.prof.unlocked ? HF.STAGES[Math.min(HF.STAGES.length, U.prof.unlocked) - 1].tiers : 1;
+    function tableOf(kind) {
+      var out = '<table class="cx"><tr><th></th><th>' + T('cod.cost') + '</th><th>' + T('cod.move') + '</th><th>' + T('cod.range') +
+        '</th><th>' + T('cod.atk') + '</th><th>' + T('cod.ammo') + '</th><th>' + T('cod.fuel') + '</th><th>' + T('cod.cap') + '</th></tr>';
+      HF.UIDS.forEach(function (uid) {
+        var D = HF.UNITS[uid];
+        if (D.build !== kind) return;
+        var lock = D.tier > tiers;
+        out += '<tr class="' + (lock ? 'lock' : '') + '"><td class="c1" data-u="' + uid + '"><div class="cxn"><span class="unitcode">' + esc(D.s) + '</span> ' + esc(L(D.n)) + (lock ? ' <span class="warn">' + T('misc.lock') + '</span>' : '') +
+          '</div><div class="cxm">' + esc(D.models) + '</div>' +
+          '<div class="cxd">' + esc(L(D.d)) + '</div></td><td>' + D.cost + '</td><td>' + D.mv + '</td><td>' + D.r0 + '-' + D.r1 + '</td><td>' + D.atk +
+          '</td><td>' + (D.ammo < 0 ? '∞' : D.ammo) + '</td><td>' + D.fuel + '</td><td>' + (D.cap ? T('cod.yes') : T('cod.no')) + '</td></tr>';
+        out += '<tr class="mulrow"><td colspan="8">' + T('cod.mult') + ': ' + HF.CLASSES.map(function (c) { return T('cls.' + c) + ' ×' + D.mul[c]; }).join(' · ') +
+          ' · ' + T('dom.' + D.dom) + (D.ind ? ' · INDIR' : '') + (D.car ? ' · CARGO ' + D.car : '') + (D.desig ? ' · DESIGNATE' : '') + '</td></tr>';
+      });
+      out += '</table>';
+      return out;
+    }
+    var h = '<h2>' + T('cod.title') + '</h2><div class="scroll tabs">';
+    h += '<h3>' + T('cod.land') + '</h3>' + tableOf('LAND');
+    h += '<h3>' + T('cod.air') + '</h3>' + tableOf('AIR');
+    h += '<h3>' + T('cod.terr') + '</h3><table class="cx"><tr><th>' + T('cod.terr') + '</th><th>' + T('dom.F') + '/' + T('dom.W') + '/' + T('dom.T') + '</th><th>DEF</th><th>' + T('hud.income') + '</th></tr>';
+    HF.TKEYS.forEach(function (k) {
+      var D = HF.TERR[k];
+      var cst = ['F', 'W', 'T'].map(function (d) { return D.cost[d] < 0 ? '—' : (D.cost[d] / 10); }).join('/');
+      h += '<tr><td><div class="cxn">' + esc(L(D.n)) + '</div><div class="cxd">' + esc(L(D.d)) + '</div></td><td>' + cst + '</td><td>+' + D.def + '</td><td>' + (D.inc || '—') + '</td></tr>';
+    });
+    h += '</table><p class="mut">' + T('cod.terrainnote') + ' · ' + T('cod.locked') + ' = ' + T('stages.lockinfo') + '</p></div>';
+    h += '<div class="btnrow"><button data-act="close">' + T('b.back') + '</button></div>';
+    openSheet(h, 'codex');
+    var cells = U.el.sheet.querySelectorAll('td[data-u]');
+    for (var i = 0; i < cells.length; i++) {
+      var cv = spriteCanvas(cells[i].getAttribute('data-u'), 0, 3);
+      if (cv) { cv.className = 'spr big'; cells[i].insertBefore(cv, cells[i].firstChild); }
+    }
+  }
+
+  function renderSettings() {
+    U.openScreen = 'set';
+    var h = '<h2>' + T('set.title') + '</h2><div class="setrow"><span>' + T('set.sound') + '</span><div>';
+    h += '<button class="chip' + (HF.soundOn ? ' on' : '') + '" data-act="sound" data-arg="1">' + T('set.on') + '</button>';
+    h += '<button class="chip' + (!HF.soundOn ? ' on' : '') + '" data-act="sound" data-arg="0">' + T('set.off') + '</button></div></div>';
+    h += '<div class="setrow"><span>' + T('set.music') + '</span><div>';
+    h += '<button class="chip' + (HF.musicOn ? ' on' : '') + '" data-act="music" data-arg="1">' + T('set.on') + '</button>';
+    h += '<button class="chip' + (!HF.musicOn ? ' on' : '') + '" data-act="music" data-arg="0">' + T('set.off') + '</button></div></div>';
+    h += '<div class="setrow"><span>' + T('set.lang') + '</span><div>';
+    HF.LANGS.forEach(function (l) { h += '<button class="chip' + (HF.lang === l ? ' on' : '') + '" data-act="lang" data-arg="' + l + '">' + HF.LANGNAME[l] + '</button>'; });
+    h += '</div></div>';
+    h += '<div class="setrow"><span>' + T('set.diff') + '</span><div>';
+    ['easy', 'normal', 'hard'].forEach(function (d) { h += '<button class="chip' + (U.prof.diff === d ? ' on' : '') + '" data-act="diff" data-arg="' + d + '">' + T('diff.' + d) + '</button>'; });
+    h += '</div></div>';
+    h += '<p class="mut">' + T('set.about') + '</p>';
+    h += '<p class="mut">' + T('set.storage') + ': ' + (HF.store.available() ? T('set.storage.ok') : T('set.storage.no')) + ' · v' + HF.VER + (U.cheat ? ' [DEV]' : '') + '</p>';
+    h += '<div class="btnrow"><button class="danger" data-act="erase">' + T('b.erase') + '</button><button data-act="close">' + T('b.back') + '</button></div>';
+    openSheet(h, 'set');
+  }
+
+  function renderMenu() {
+    U.openScreen = 'menu';
+    var h = '<h2>' + T('menu.title') + '</h2><div class="col">';
+    h += '<button data-act="stages">' + T('b.stages') + '</button>';
+    h += '<button data-act="codex">' + T('b.codex') + '</button>';
+    h += '<button data-act="help">' + T('b.help') + '</button>';
+    h += '<button data-act="set">' + T('b.settings') + '</button>';
+    h += '<button class="danger" data-act="quit">' + T('menu.quit') + '</button>';
+    h += '</div><p class="mut">' + T('menu.save') + '</p>';
+    openSheet(h, 'menu');
+  }
+
+  function renderResult() {
+    U.openScreen = 'result';
+    var o = U.st.over, win = o.win === 0;
+    var st = U.st.stage, rec = U.prof.best[st.id];
+    var h = '<div class="result ' + (win ? 'win' : 'lose') + '"><h2>' + T(win ? 'res.win' : 'res.lose') + '</h2>';
+    h += '<div class="rsub">' + esc(L(st.n)) + ' · ' + T('res.turns', { n: o.turns }) + ' · ' + T('res.score', { n: o.score[0] + ' / ' + o.score[1] }) + '</div>';
+    h += '<table class="kv"><tr><th></th><th>' + T('you') + '</th><th>' + T('enemy') + '</th></tr>';
+    h += '<tr><td>' + T('res.ko').split('/')[0] + '</td><td>' + U.st.ko[0] + '</td><td>' + U.st.ko[1] + '</td></tr>';
+    h += '<tr><td>' + T('hud.funds') + '</td><td>' + U.st.funds[0] + '</td><td>' + U.st.funds[1] + '</td></tr></table>';
+    if (win && rec) h += '<div class="ok">' + (rec.fresh ? T('res.new') : T('res.best', { n: rec.turns })) + '</div>';
+    if (win && U.prof.unlockedMsg) h += '<div class="ok">' + T('res.unlock', { n: U.prof.unlockedMsg }) + '</div>';
+    h += '</div><div class="btnrow">';
+    if (win && U.prof.unlocked > st.id) h += '<button class="primary" data-act="next">' + T('b.next') + '</button>';
+    h += '<button data-act="replay">' + T('b.replay') + '</button>';
+    h += '<button data-act="stages">' + T('b.stages') + '</button>';
+    h += '<button data-act="title">' + T('b.back') + '</button></div>';
+    openSheet(h, 'result');
+  }
+
+  /* ---------- sheets (modal) ---------- */
+  function openSheet(html, kind) {
+    U.el.sheet.innerHTML = html;
+    U.el.modal.classList.add('on');
+    U.el.modal.dataset.kind = kind || '';
+    U.el.sheet.ontouchstart = null;
+    U.el.sheet.querySelectorAll('[data-act]').forEach(bind);
+  }
+  U.openSheet = openSheet;
+  function closeSheet() {
+    U.el.modal.classList.remove('on');
+    U.el.sheet.innerHTML = '';
+    U.openScreen = null;
+  }
+  U.closeSheet = closeSheet;
+
+  function bind(el) {
+    el.onclick = function (e) {
+      var a = el.getAttribute('data-act'), arg = el.getAttribute('data-arg');
+      HF.sfx('click');
+      if (a === 'close') closeSheet();
+      else if (a === 'title') showTitle();
+      else if (a === 'stages') renderStages();
+      else if (a === 'codex') renderCodex();
+      else if (a === 'help') renderHelp();
+      else if (a === 'set') renderSettings();
+      else if (a === 'menu') renderMenu();
+      else if (a === 'result') renderResult();
+      else if (a === 'play') { closeSheet(); startGame(parseInt(arg, 10)); }
+      else if (a === 'resume') { closeSheet(); resumeGame(); }
+      else if (a === 'diff') { U.prof.diff = arg; HF.saveProfile(U.prof); renderScreen(U.openScreen); }
+      else if (a === 'lang') { HF.lang = arg; U.prof.lang = arg; HF.saveProfile(U.prof); applyLang(); renderScreen(U.openScreen); }
+      else if (a === 'sound') { HF.soundOn = arg === '1'; U.prof.sound = arg === '1' ? 1 : 0; HF.saveProfile(U.prof); applyLang(); renderScreen(U.openScreen); }
+      else if (a === 'music') { HF.musicOn = arg === '1'; U.prof.music = HF.musicOn ? 1 : 0; HF.saveProfile(U.prof); HF.musicUpdate(); renderSettings(); }
+      else if (a === 'erase') {
+        if (window.confirm(T('set.eraseq'))) { HF.clearSave(); U.prof = { v: 1, lang: HF.lang, sound: HF.soundOn ? 1 : 0, music: HF.musicOn ? 1 : 0, diff: 'normal', unlocked: 1, best: {}, seen: [], plays: 0 }; HF.saveProfile(U.prof); U.toast(T('set.erased')); renderSettings(); }
+      } else if (a === 'quit') {
+        if (U.st && !U.st.over) save();
+        if (window.confirm(T('menu.quitq'))) showTitle();
+      } else if (a === 'replay') { startGame(U.st.stageIdx); }
+      else if (a === 'next') { startGame(Math.min(HF.STAGES.length - 1, U.st.stageIdx + 1)); }
+      else if (a === 'build') { doBuild(parseInt(el.getAttribute('data-cell'), 10), arg); }
+      else if (a === 'fire') { commitAttack(); }
+      else if (a === 'cancel') { closeSheet(); if (U.pendingFire) U.pendingFire = null; }
+      else if (a === 'end') { closeSheet(); endTurn(); }
+    };
+  }
+
+  /* ---------- game start / save ---------- */
+  function startGame(idx) {
+    U.prof.plays++;
+    HF.saveProfile(U.prof);
+    U.st = HF.newGame(idx, U.prof.diff);
+    U.sel = -1; U.selId = 0; U.infoCell = -1; U.phase = 'idle'; U.hist = []; U.busy = false;
+    U.queue = []; U.moveSet = null; U.atkSet = null;
+    U.started = Date.now();
+    clearViewFx();
+    HF.view.fit(U.st);
+    closeSheet();
+    applyLang();
+    refreshHud(); renderLog(); refreshActs();
+    U.toast(T('obj.hq'));
+    save();
+  }
+  U.startGame = startGame;
+
+  function resumeGame() {
+    var sv = HF.readSave();
+    if (!sv) { U.toast(T('save.none')); showTitle(); return; }
+    var st = HF.unpack(sv.st);
+    if (!st) { U.toast(T('save.none')); showTitle(); return; }
+    U.st = st; U.sel = -1; U.selId = 0; U.infoCell = -1; U.phase = 'idle'; U.hist = []; U.busy = false; U.queue = [];
+    U.moveSet = null; U.atkSet = null;
+    clearViewFx();
+    HF.view.fit(U.st);
+    closeSheet(); applyLang(); refreshHud(); renderLog(); refreshActs();
+    U.toast(T('save.found') + ' T' + st.turn);
+    if (st.over) renderResult();
+    else if (st.side === 1) setTimeout(function () { runAi(); }, 350);
+  }
+  U.resumeGame = resumeGame;
+
+  function save() {
+    if (!U.st) return;
+    if (U.st.over) { HF.clearSave(); return; }
+    HF.writeSave({ v: 1, at: Date.now(), lang: HF.lang, st: HF.pack(U.st) });
+  }
+  U.save = save;
+
+  function pushHist() {
+    if (!U.st) return;
+    U.hist.push(JSON.stringify(HF.pack(U.st)));
+    if (U.hist.length > 10) U.hist.shift();
+    refreshActs();
+  }
+  function undo() {
+    if (!U.st || U.busy || U.st.side !== 0 || !U.hist.length) { HF.sfx('deny'); return; }
+    var st = HF.unpack(JSON.parse(U.hist.pop()));
+    if (!st) return;
+    U.st = st; U.sel = -1; U.selId = 0; U.phase = 'idle';
+    U.moveSet = null; U.atkSet = null; clearViewFx();
+    refreshHud(); renderLog(); refreshActs(); refreshPanel(null);
+    HF.sfx('click'); save();
+  }
+  U.undo = undo;
+
+  function clearViewFx() { HF.view.popups.length = 0; HF.view.fx.length = 0; HF.view.anim = null; }
+
+  /* ---------- HUD ---------- */
+  function refreshHud() {
+    var s = U.st; if (!s) return;
+    var st = s.stage;
+    $('tStage').textContent = T('hud.stage') + ' ' + st.id;
+    $('tName').textContent = L(st.n);
+    $('tTurn').textContent = T('hud.turn') + ' ' + s.turn + '/' + s.limit;
+    $('tFunds').textContent = s.funds[0];
+    $('tInc').textContent = '+' + HF.incomeOf(s, 0).n;
+    $('tUnits').textContent = HF.countUnits(s, 0) + '/' + s.capU;
+    $('tPhase').textContent = s.over ? '' : T(s.side === 0 ? 'hud.phase.you' : 'hud.phase.enemy');
+    $('tPhase').className = 'ph' + (s.side === 0 ? ' mine' : ' foe');
+    $('tObj').textContent = T('obj.hq');
+    U.el.bEnd.disabled = s.side !== 0 || !!s.over || U.busy;
+    U.el.bUndo.disabled = !U.hist.length || s.side !== 0 || U.busy;
+  }
+  function renderLog() {
+    var s = U.st; if (!s) return;
+    var out = '';
+    var tail = s.log.slice(-4);
+    for (var i = 0; i < tail.length; i++) out += '<div class="ln">' + esc(U.logHtml(tail[i])) + '</div>';
+    U.el.logList.innerHTML = out;
+  }
+  U.renderLog = renderLog;
+  U.refreshHud = refreshHud;
+
+  /* ---------- info panel ---------- */
+  function refreshPanel(u, cellIdx) {
+    var p = $('panel');
+    if (!U.st) { p.innerHTML = ''; return; }
+    U.infoCell = u ? u.i : (cellIdx >= 0 ? cellIdx : -1);
+    var html = '';
+    if (u) {
+      var D = HF.UNITS[u.t];
+      html += '<div class="ph2"><span><span class="unitcode">' + esc(D.s) + '</span> ' + esc(L(D.n)) + '</span><span class="own">' + T(HF.sideKey(u.side)) + '</span></div>';
+      html += '<div class="models">' + esc(D.models) + '</div>';
+      html += '<div class="bars">' + statBar(T('cod.hp'), u.hp, 100, u.hp > 60 ? 'g' : (u.hp > 30 ? 'y' : 'r'));
+      if (D.ammo >= 0) html += statBar(T('cod.ammo'), u.ammo, D.ammo, u.ammo ? 'b' : 'r');
+      html += statBar(T('cod.fuel'), Math.round(u.fuel / 10), D.fuel, u.fuel > D.fuel * 4 ? 'b' : 'y');
+      html += '</div>';
+      html += '<div class="stats">' + T('cod.cost') + ' ' + D.cost + ' · ' + T('cod.move') + ' ' + D.mv + ' · ' + T('cod.range') + ' ' + D.r0 + '-' + D.r1 +
+        ' · ' + T('cod.atk') + ' ' + D.atk + '<br>' + T('dom.' + D.dom) + ' · ' + T('cls.' + D.cls) +
+        (u.car.length ? ' · CARGO ' + u.car.map(function (c) { return L(HF.UNITS[c.t].n); }).join(', ') : '') + '</div>';
+      if (u.i >= 0 && U.st.cells[u.i]) {
+        var terrain = HF.TERR[U.st.cells[u.i].t];
+        html += '<div class="note">' + esc(L(D.d)) + '</div>';
+        html += '<div class="note">' + esc(L(terrain.n)) + ' DEF+' + terrain.def + ' · ' + esc(L(terrain.d)) + '</div>';
+      }
+    } else if (cellIdx >= 0) {
+      var cell = U.st.cells[cellIdx], TD = HF.TERR[cell.t];
+      html += '<div class="ph2">' + esc(L(TD.n)) + (cell.own >= 0 ? '<span class="own">' + T(HF.sideKey(cell.own)) + '</span>' : '') + '</div>';
+      html += '<div class="note">' + esc(L(TD.d)) + '</div>';
+      html += '<div class="stats">' + ['F', 'W', 'T'].map(function (dom) {
+        return T('dom.' + dom) + ' ' + (TD.cost[dom] < 0 ? '—' : TD.cost[dom] / 10);
+      }).join(' · ') + ' · DEF+' + TD.def + '</div>';
+      var u2 = HF.unitAt(U.st, cellIdx);
+      if (u2) html += '<div class="stats">' + esc(L(HF.UNITS[u2.t].n)) + ' ' + T('misc.hp', { n: u2.hp }) + '</div>';
+      if (TD.cap && cell.cap > 0) html += '<div class="note warn">' + T('misc.captick', { n: cell.cap, m: TD.cap }) + '</div>';
+      if (TD.inc) html += '<div class="stats">' + T('hud.income') + ' +' + TD.inc + '</div>';
+    } else {
+      html = '<div class="note">' + T('hud.hint') + '</div>';
+    }
+    p.innerHTML = html;
+    p.classList.add('on');
+  }
+  function statBar(label, v, max, cls) {
+    var w = Math.round(100 * HF.clamp(v / Math.max(1, max), 0, 1));
+    return '<div class="sbar"><span>' + label + '</span><i class="' + cls + '" style="width:' + w + '%"></i><b>' + v + '</b></div>';
+  }
+  U.refreshPanel = refreshPanel;
+
+  /* ---------- action bar ---------- */
+  function refreshActs() {
+    var s = U.st, box = U.el.acts;
+    if (!s) { box.innerHTML = ''; return; }
+    var u = U.selId ? HF.byId(s, U.selId) : null;
+    var html = '';
+    if (u && s.side === 0) {
+      html += '<button data-act="aWait">' + T('a.wait') + '</button>';
+      var carriers = HF.liveUnits(s, 0).filter(function (c) { return HF.canLoad(s, c, u); });
+      if (carriers.length) html += '<button data-act="aLoad">' + T('a.load') + '</button>';
+      if (u.car.length) html += '<button data-act="aUnload">' + T('a.unload') + '</button>';
+      if (HF.canFort(s, u)) html += '<button data-act="aFort">' + T('a.fort') + ' ' + HF.FORT_COST + '</button>';
+      if (HF.canDepot(s, u)) html += '<button data-act="aDepot">' + T('a.depot') + ' ' + HF.DEPOT_COST + '</button>';
+    } else {
+      var build = HF.liveUnits(s, 0).length, nb = 0;
+      for (var i = 0; i < s.cells.length; i++) if (s.cells[i].own === 0 && HF.TERR[s.cells[i].t].build && !s.occ[i]) nb++;
+      if (nb && s.side === 0 && !s.over) html += '<button data-act="aBuildList">' + T('a.build') + ' (' + nb + ')</button>';
+    }
+    box.innerHTML = html;
+    Array.prototype.forEach.call(box.querySelectorAll('[data-act]'), function (el) {
+      el.onclick = function () {
+        HF.sfx('click');
+        var a = el.getAttribute('data-act');
+        if (a === 'aWait') waitSel();
+        else if (a === 'aLoad') startLoad();
+        else if (a === 'aUnload') startUnload();
+        else if (a === 'aFort') doFort();
+        else if (a === 'aDepot') doDepot();
+        else if (a === 'aBuildList') buildList();
+      };
+    });
+  }
+  U.refreshActs = refreshActs;
+
+  /* ---------- selection & orders ---------- */
+  function clearSel() {
+    U.sel = -1; U.selId = 0; U.phase = 'idle';
+    U.moveSet = null; U.moveCost = null; U.atkSet = null; U.hlFrom = -1;
+    refreshActs(); refreshPanel(null);
+  }
+  U.clearSel = clearSel;
+
+  function selectUnit(u) {
+    U.sel = u.i; U.selId = u.id; U.phase = 'ready';
+    var r = HF.reach(U.st, u);
+    U.moveCost = r.cost;
+    U.moveSet = new Uint8Array(U.st.cells.length);
+    for (var i2 = 0; i2 < U.st.cells.length; i2++) U.moveSet[i2] = r.stop[i2] && r.cost[i2] >= 0 ? 1 : 0;
+    U.moveSet[u.i] = 1;
+    U.hlFrom = u.i;
+    U.atkSet = attackSet(u, u.i);
+    HF.sfx('select');
+    refreshActs(); refreshPanel(u);
+    setHint(T('sel.mine'));
+  }
+  U.selectUnit = selectUnit;
+  function attackSet(u, from) {
+    var set = new Uint8Array(U.st.cells.length), D = HF.UNITS[u.t];
+    if (U.st.side !== u.side || u.attacked) return set;
+    if (D.ammo >= 0 && u.ammo <= 0) return set;
+    var foes = HF.liveUnits(U.st, 1 - u.side);
+    for (var k = 0; k < foes.length; k++) {
+      var f = foes[k];
+      if (!(D.mul[HF.UNITS[f.t].cls] > 0)) continue;
+      var d = HF.distIdx(U.st, from, f.i);
+      if (d < D.r0 || d > D.r1) continue;
+      set[f.i] = 1;
+    }
+    return set;
+  }
+  function setHint(t) { U.el.hintLine.textContent = t; }
+  U.setHint = setHint;
+
+  U.tapHex = function (i) {
+    var s = U.st;
+    if (!s || U.busy || s.over) return;
+    if (s.side !== 0) { setHint(T('hud.phase.enemy')); return; }
+    var u = U.selId ? HF.byId(s, U.selId) : null;
+    var other = HF.unitAt(s, i);
+    var cell = s.cells[i];
+
+    if (!u) {
+      if (other && other.side === 0 && HF.canAct(s, other)) { selectUnit(other); return; }
+      if (cell.own === 0 && HF.TERR[cell.t].build) { buildSheet(i); return; }
+      refreshPanel(other, i);
+      if (other && other.side === 1) setHint(T('sel.enemy'));
+      else if (other) setHint(T('sel.done'));
+      return;
+    }
+    /* we already picked up a unit: orders */
+    if (i === u.i) { clearSel(); return; }
+    if (U.atkSet && U.atkSet[i] && other && other.side === 1) { askFire(u, other); return; }
+    if (U.moveSet && U.moveSet[i] && (!other || other.i === u.i)) { orderMove(u, i); return; }
+    if (other && other.side === 0 && HF.canAct(s, other)) { selectUnit(other); return; }
+    if (other && other.side === 1) {
+      var D = HF.UNITS[u.t];
+      setHint(D.ammo >= 0 && u.ammo <= 0 ? T('sel.noammo') : T('sel.cantattack'));
+      HF.sfx('deny'); return;
+    }
+    setHint(T('sel.nostop')); HF.sfx('deny');
+  };
+
+  function orderMove(u, i) {
+    pushHist();
+    var ev = HF.doMove(U.st, u, i);
+    if (!ev) { U.hist.pop(); HF.sfx('deny'); return; }
+    U.sel = i; U.hlFrom = i;
+    enqueue(ev);
+    U.moveSet = null; U.moveCost = null;
+    if (u.car.length) { /* transport may still drop cargo after moving: keep menu */ }
+    var canFire = HF.canFire(U.st, u) && (HF.UNITS[u.t].ammo < 0 || u.ammo > 0);
+    if (canFire) {
+      U.phase = 'target';
+      U.atkSet = attackSet(u, i);
+      var any = false; for (var k = 0; k < U.atkSet.length; k++) if (U.atkSet[k]) { any = true; break; }
+      setHint(any ? T('sel.after') : T('sel.done'));
+      if (!any) finishUnit();
+    } else finishUnit();
+    refreshHud(); save();
+  }
+  function finishUnit() {
+    U.atkSet = null;
+    U.sel = -1; U.selId = 0; U.phase = 'idle'; U.moveSet = null; U.moveCost = null;
+    refreshActs(); refreshPanel(null); setHint(T('hud.hint'));
+  }
+  function waitSel() {
+    var u = U.selId ? HF.byId(U.st, U.selId) : null;
+    if (!u) return;
+    pushHist(); u.acted = 1; u.attacked = 1;
+    finishUnit(); save();
+  }
+  function startLoad() {
+    var u = HF.byId(U.st, U.selId);
+    if (!u) return;
+    var car = HF.liveUnits(U.st, 0).filter(function (c) { return HF.canLoad(U.st, c, u); })[0];
+    if (!car) return;
+    pushHist();
+    var ev = HF.doLoad(U.st, car, u);
+    if (ev) { enqueue(ev); finishUnit(); refreshHud(); save(); }
+  }
+  function startUnload() {
+    var u = HF.byId(U.st, U.selId);
+    if (!u || !u.car.length) return;
+    pushHist();
+    var ev = HF.doUnload(U.st, u, u.i);
+    if (!ev) {
+      /* pick the best adjacent landing spot by trying the reachable hexes */
+      var r = HF.reach(U.st, u), best = -1;
+      for (var i = 0; i < r.cost.length && best < 0; i++) {
+        if (!r.stop[i] || r.cost[i] < 0) continue;
+        if (HF.unloadSpots(U.st, u, i).length) best = i;
+      }
+      if (best >= 0) ev = HF.doUnload(U.st, u, best);
+    }
+    if (ev) {
+      enqueue(ev);
+      if (ev.at !== undefined) HF.view.pop(U.st, ev.at, L(HF.UNITS[u.car.length ? u.car[0].t : u.t].n), '#cfe6f7');
+      finishUnit(); refreshHud(); save();
+    } else { U.hist.pop(); HF.sfx('deny'); }
+  }
+  function doFort() {
+    var u = HF.byId(U.st, U.selId);
+    if (!u || !HF.canFort(U.st, u)) return;
+    pushHist(); var ev = HF.doFort(U.st, u);
+    if (ev) { enqueue(ev); finishUnit(); refreshHud(); save(); } else U.hist.pop();
+  }
+  function doDepot() {
+    var u = HF.byId(U.st, U.selId);
+    if (!u || !HF.canDepot(U.st, u)) return;
+    pushHist(); var ev = HF.doDepot(U.st, u);
+    if (ev) { enqueue(ev); finishUnit(); refreshHud(); save(); } else U.hist.pop();
+  }
+
+  /* ---------- fire ---------- */
+  var pending = null;
+  function askFire(a, t) {
+    var fc = HF.forecast(U.st, a, t, a.i);
+    if (!fc) { HF.sfx('deny'); setHint(T('sel.noammo')); return; }
+    pending = { a: a.id, t: t.id };
+    var an = L(HF.UNITS[a.t].n), tn = L(HF.UNITS[t.t].n);
+    var h = '<div class="fire"><h3>' + T('fc.title') + '</h3>';
+    h += '<div class="vs">' + esc(an) + ' → ' + esc(tn) + '</div>';
+    h += '<div class="big">-' + fc.dmg + '</div>';
+    h += '<div class="mut">' + T('fc.vs', { a: an, b: tn }) + ' ×' + fc.mul + ' · ' + T('fc.terr', { p: Math.round(fc.def * 6.2) }) + (fc.desig ? ' · UAV' : '') + '</div>';
+    h += '<div class="ctr">' + (fc.counter ? T('fc.counter', { n: fc.counter }) : '<span class="ok">' + T('fc.nocounter') + '</span>') + '</div>';
+    h += '<div class="btnrow"><button class="danger" data-act="fire">' + T('fc.go') + '</button><button data-act="cancel">' + T('b.cancel') + '</button></div></div>';
+    openSheet(h, 'fire');
+  }
+  function commitAttack() {
+    if (!pending) { closeSheet(); return; }
+    var a = HF.byId(U.st, pending.a), t = HF.byId(U.st, pending.t);
+    pending = null;
+    closeSheet();
+    if (!a || !t) return;
+    pushHist();
+    var ev = HF.doAttack(U.st, a, t, a.i);
+    if (!ev) { U.hist.pop(); HF.sfx('deny'); return; }
+    enqueue(ev);
+    U.atkSet = null;
+    finishUnit(); refreshHud(); save();
+  }
+
+  /* ---------- build ---------- */
+  function buildList() {
+    var s = U.st, cells = [];
+    for (var i = 0; i < s.cells.length; i++) if (s.cells[i].own === 0 && HF.TERR[s.cells[i].t].build && !s.occ[i]) cells.push(i);
+    if (!cells.length) { U.toast(T('build.out')); return; }
+    if (cells.length === 1) { buildSheet(cells[0]); return; }
+    var h = '<h3>' + T('a.build') + '</h3><div class="row2">';
+    cells.forEach(function (c) {
+      h += '<button data-act="gotoBuild" data-arg="' + c + '">' + esc(L(HF.TERR[s.cells[c].t].n)) + '</button>';
+    });
+    h += '</div><div class="btnrow"><button data-act="close">' + T('b.back') + '</button></div>';
+    openSheet(h, 'buildlist');
+    U.el.sheet.querySelectorAll('[data-act="gotoBuild"]').forEach(function (el) {
+      el.onclick = function () { var c = parseInt(el.getAttribute('data-arg'), 10); HF.view.center(s, c); buildSheet(c); };
+    });
+  }
+  function buildSheet(cellIdx) {
+    var s = U.st, list = HF.buildable(s, cellIdx, 0);
+    if (!list) { U.toast(T('build.out')); return; }
+    var kind = HF.TERR[s.cells[cellIdx].t].build;
+    var h = '<h3>' + T('build.title', { b: L(HF.TERR[s.cells[cellIdx].t].n) }) + ' <span class="mut">' + T('hud.funds') + ' ' + s.funds[0] + '</span></h3>';
+    h += '<div class="bgrid">';
+    list.forEach(function (tid) {
+      var D = HF.UNITS[tid], ok = HF.canBuild(s, cellIdx, 0, tid);
+      h += '<button class="bcard' + (ok === true ? '' : ' off') + '" data-build="' + tid + '">' +
+        '<span class="bn">' + esc(L(D.n)) + '</span><span class="bm">' + esc(D.models) + '</span>' +
+        '<span class="bs">' + T('cod.move') + ' ' + D.mv + ' · ' + T('cod.range') + ' ' + D.r0 + '-' + D.r1 + ' · ' + T('cod.atk') + ' ' + D.atk + '</span>' +
+        '<span class="bc">' + D.cost + '</span>' + (ok === 'funds' ? '<span class="warn">Funds</span>' : '') +
+        (ok === 'cap' ? '<span class="warn">' + T('build.noCap', { n: s.capU }) + '</span>' : '') + '</button>';
+    });
+    h += '</div><div class="btnrow"><button data-act="close">' + T('b.cancel') + '</button></div>';
+    openSheet(h, 'build');
+    U.el.sheet.querySelectorAll('[data-build]').forEach(function (el) {
+      el.onclick = function () { doBuild(cellIdx, el.getAttribute('data-build')); };
+    });
+    /* sprites next to the names */
+    var cards = U.el.sheet.querySelectorAll('.bcard');
+    for (var k = 0; k < cards.length; k++) {
+      var cv = spriteCanvas(list[k], 0, 3);
+      if (cv) cards[k].insertBefore(cv, cards[k].firstChild);
+    }
+  }
+  function doBuild(cellIdx, tid) {
+    var s = U.st;
+    if (HF.canBuild(s, cellIdx, 0, tid) !== true) { HF.sfx('deny'); U.toast(T('build.noFunds')); return; }
+    pushHist();
+    var ev = HF.doBuild(s, cellIdx, 0, tid);
+    if (!ev) { U.hist.pop(); return; }
+    closeSheet(); enqueue(ev);
+    HF.view.pop(s, cellIdx, '+' + L(HF.UNITS[tid].n), '#9ee6a4');
+    refreshHud(); refreshActs(); save();
+  }
+  function cheatBuild() {
+    if (!U.cheat || !U.st || U.st.side !== 0) return;
+    var cell = -1;
+    for (var i = 0; i < U.st.cells.length; i++) if (U.st.cells[i].own === 0 && HF.TERR[U.st.cells[i].t].build === 'LAND' && !U.st.occ[i]) { cell = i; break; }
+    if (cell < 0) return;
+    var list = HF.buildable(U.st, cell, 0);
+    var best = null;
+    for (var k = 0; k < list.length; k++) if (!best || HF.UNITS[list[k]].cost > HF.UNITS[best].cost) best = list[k];
+    U.st.funds[0] += HF.UNITS[best].cost;
+    doBuild(cell, best);
+  }
+
+  /* ---------- turn flow + animation queue ---------- */
+  function enqueue(ev) { U.queue.push(ev); }
+  U.enqueue = enqueue;
+
+  function endTurn() {
+    var s = U.st;
+    if (!s || U.busy || s.over || s.side !== 0) return;
+    clearSel();
+    pushHist();
+    var evs = HF.endTurn(s);
+    U.hist = [];
+    for (var i = 0; i < evs.length; i++) U.queue.push(evs[i]);
+    U.queue.push({ k: '_aiwait' });
+    refreshHud(); save();
+  }
+  U.endTurn = endTurn;
+
+  function runAi() {
+    var s = U.st;
+    if (!s || s.over || s.side === 0) return;
+    U.busy = true;
+    refreshHud();
+    var evs = HF.aiTurn(s);
+    for (var i = 0; i < evs.length; i++) U.queue.push(evs[i]);
+    var e2 = HF.endTurn(s);
+    for (var j = 0; j < e2.length; j++) U.queue.push(e2[j]);
+    U.queue.push({ k: '_aifinish' });
+    refreshHud(); save();
+  }
+
+  /* called every frame by main; returns true while animating */
+  U.step = function (now, dt) {
+    HF.view.dt = dt;
+    var a = HF.view.anim;
+    if (a) {
+      a.t += dt;
+      var p = Math.min(1, a.t / a.dur);
+      if (a.kind === 'move') {
+        var path = a.path;
+        var f = p * (path.length - 1);
+        var i0 = Math.floor(f), i1 = Math.min(path.length - 1, i0 + 1), fr = f - i0;
+        var p0 = HF.view.hexXY(U.st, path[i0]), p1 = HF.view.hexXY(U.st, path[i1]);
+        a.moving = { id: a.id, xy: [p0[0] + (p1[0] - p0[0]) * fr, p0[1] + (p1[1] - p0[1]) * fr] };
+        if (p >= 1) { HF.view.anim = null; }
+      } else if (a.kind === 'wait') {
+        if (p >= 1) HF.view.anim = null;
+      }
+      return true;
+    }
+    if (!U.queue.length) { if (U.busy && !U.queue.length) U.busy = false; return false; }
+    var ev = U.queue.shift();
+    var s = U.st;
+    if (!s) return false;
+    if (ev.k === '_aiwait') { if (s.side === 1) runAi(); return false; }
+    if (ev.k === '_aifinish') {
+      U.busy = false; refreshHud(); refreshActs(); renderLog();
+      if (!s.over) setHint(T('hud.hint'));
+      save();
+      return false;
+    }
+    if (ev.k === 'move') {
+      HF.view.anim = { kind: 'move', t: 0, dur: Math.min(420, 90 + 40 * (ev.path.length - 1)), path: ev.path, id: ev.id, moving: null };
+      HF.sfx('move');
+    } else if (ev.k === 'attack') {
+      HF.view.hit(s, ev.from, ev.to);
+      HF.sfx('fire');
+      setTimeout(function () {
+        HF.view.pop(s, ev.to, '-' + ev.dmg, '#ffd27a');
+        if (ev.tgtDead) { HF.view.boom(s, ev.to); HF.sfx('ko'); } else HF.sfx('hit');
+        if (ev.counter > 0) { HF.view.pop(s, ev.from, '-' + ev.counter, '#ff9d8a', -6); }
+        if (ev.atkKo) { HF.view.boom(s, ev.from); }
+      }, 150);
+      HF.view.anim = { kind: 'wait', t: 0, dur: 260 };
+    } else if (ev.k === 'build') {
+      HF.view.pop(s, ev.i, '+', '#9ee6a4'); HF.sfx('build');
+      HF.view.anim = { kind: 'wait', t: 0, dur: 120 };
+    } else if (ev.k === 'capture') {
+      HF.view.pop(s, ev.i, L(HF.TERR[ev.prop].n), ev.side === 0 ? '#9ee6a4' : '#ff9d8a'); HF.sfx('capture');
+    } else if (ev.k === 'hqfire') {
+      HF.view.pop(s, ev.i, '-' + ev.dmg, '#ff9d8a'); HF.sfx('hit');
+    } else if (ev.k === 'fort' || ev.k === 'depot') {
+      HF.view.pop(s, ev.i, '+', '#9ee6a4'); HF.sfx('build');
+      HF.view.dirtyTerr = true;
+    } else if (ev.k === 'load' || ev.k === 'unload') {
+      HF.sfx('move');
+    } else if (ev.k === 'over') {
+      onGameOver();
+    } else if (ev.k === 'turnend') {
+      HF.sfx('turn');
+      renderLog(); refreshHud();
+    }
+    renderLog();
+    return true;
+  };
+
+  U.onGameOver = onGameOver;
+  function onGameOver() {
+    var s = U.st, win = s.over.win === 0, st = s.stage;
+    HF.sfx(win ? 'win' : 'lose');
+    var rec = U.prof.best[st.id] || null;
+    U.prof.unlockedMsg = null;
+    if (win) {
+      if (!rec || s.over.turns < rec.turns) U.prof.best[st.id] = { turns: s.over.turns, score: s.over.score[0], fresh: true };
+      if (U.prof.unlocked < st.id + 1 && st.id + 1 <= HF.STAGES.length) {
+        U.prof.unlocked = st.id + 1;
+        U.prof.unlockedMsg = 'ST' + (st.id + 1);
+        U.toast(T('tip.newstage') + ' ST' + (st.id + 1), 2600);
+      }
+    }
+    HF.saveProfile(U.prof);
+    HF.clearSave();
+    clearSel();
+    refreshHud();
+    setTimeout(function () { if (U.st && U.st.over) renderResult(); }, 600);
+  }
+
+  /* ---------- pointer / touch ---------- */
+  function wireInput() {
+    var cv = U.el.cv, down = null, moved = 0, pinch = null, lastTouchDist = 0;
+    function pos(e) { var r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+    cv.addEventListener('pointerdown', function (e) {
+      HF.audioArm();
+      if (!U.st) return;
+      down = { x: e.clientX, y: e.clientY, cx: HF.view.cam.x, cy: HF.view.cam.y, id: e.pointerId, t: Date.now() };
+      moved = 0;
+      cv.setPointerCapture && cv.setPointerCapture(e.pointerId);
+    });
+    cv.addEventListener('pointermove', function (e) {
+      if (!U.st) return;
+      var p = pos(e);
+      U.hover = HF.view.pick(U.st, p[0], p[1]);
+      if (!down) return;
+      var dx = e.clientX - down.x, dy = e.clientY - down.y;
+      moved = Math.max(moved, Math.abs(dx) + Math.abs(dy));
+      if (moved > 8) { HF.view.cam.x = down.cx - dx; HF.view.cam.y = down.cy - dy; HF.view.snap(U.st); }
+    });
+    cv.addEventListener('pointerup', function (e) {
+      if (!U.st) return;
+      if (moved <= 8) {
+        var p = pos(e), i = HF.view.pick(U.st, p[0], p[1]);
+        if (i >= 0) U.tapHex(i);
+      } else HF.sfx('pan');
+      down = null;
+    });
+    cv.addEventListener('pointercancel', function () { down = null; });
+    cv.addEventListener('wheel', function (e) {
+      if (!U.st) return;
+      e.preventDefault();
+      if (e.ctrlKey || Math.abs(e.deltaY) > 0) {
+        var before = pos(e);
+        var R0 = HF.view.cam.R;
+        HF.view.cam.R = HF.clamp(R0 + (e.deltaY < 0 ? 2 : -2), HF.view.RMIN, HF.view.RMAX);
+        var after = HF.view.hexXY ? [0, 0] : [0, 0];
+        HF.view.snap(U.st);
+      }
+    }, { passive: false });
+    /* two-finger pinch */
+    var pts = {};
+    cv.addEventListener('pointerdown', function (e) { pts[e.pointerId] = [e.clientX, e.clientY]; });
+    cv.addEventListener('pointerup', function (e) { delete pts[e.pointerId]; });
+    cv.addEventListener('pointermove', function (e) {
+      if (!pts[e.pointerId]) return;
+      pts[e.pointerId] = [e.clientX, e.clientY];
+      var ids = Object.keys(pts);
+      if (ids.length === 2) {
+        var a = pts[ids[0]], b = pts[ids[1]];
+        var d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+        if (lastTouchDist) {
+          var dr = (d - lastTouchDist) * 0.09;
+          if (Math.abs(dr) >= 0.5) { HF.view.cam.R = HF.clamp(Math.round(HF.view.cam.R + dr), HF.view.RMIN, HF.view.RMAX); if (U.st) HF.view.snap(U.st); lastTouchDist = d; }
+        }
+        lastTouchDist = d;
+        down = null;
+      } else lastTouchDist = 0;
+    });
+  }
+
+  function onKey(e) {
+    if (e.target && e.target.tagName === 'INPUT') return;
+    var k = e.key.toLowerCase();
+    if (k === 'escape') { if (U.el.modal.classList.contains('on')) closeSheet(); else clearSel(); }
+    else if (k === ' ' || k === 'enter') { if (U.st && !U.el.modal.classList.contains('on')) { e.preventDefault(); endTurn(); } }
+    else if (k === 'u') undo();
+    else if (k === 'f') { if (U.st) HF.view.fit(U.st); }
+    else if (k === 'h') renderHelp();
+    else if (k === 'c') renderCodex();
+    else if (k === 'm') { HF.soundOn = !HF.soundOn; U.prof.sound = HF.soundOn ? 1 : 0; HF.saveProfile(U.prof); applyLang(); }
+    else if (k === 'z') cheatBuild();
+    else if (k === '+' || k === '=') zoom(1);
+    else if (k === '-') zoom(-1);
+  }
+})();
+
+
+/* ==== part p09_audio.js ==== */
+/* ===== HEXFRONT :: synthesized music and sound effects (no files) ===== */
+(function () {
+  var A = HF.audio = { ctx: null, master: null, musicGain: null, timer: null, voices: [], next: 0, step: 0, reported: false };
+
+  function audioError(error) {
+    if (A.reported) return;
+    A.reported = true;
+    console.warn('HEXFRONT audio unavailable:', error);
+    if (HF.ui && HF.ui.el.toast) HF.ui.toast(HF.T('set.audioerror'));
+  }
+
+  function musicNote(freq, at, duration, volume, type) {
+    var o = A.ctx.createOscillator(), g = A.ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, at);
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.linearRampToValueAtTime(volume, at + 0.08);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + duration);
+    o.connect(g); g.connect(A.musicGain);
+    A.voices.push(o);
+    o.onended = function () {
+      var index = A.voices.indexOf(o);
+      if (index >= 0) A.voices.splice(index, 1);
+    };
+    o.start(at); o.stop(at + duration + 0.02);
+  }
+
+  var chords = [
+    [110, 164.81, 220, 261.63], [87.31, 130.81, 174.61, 220],
+    [98, 146.83, 196, 246.94], [82.41, 123.47, 164.81, 196]
+  ];
+  var pattern = [0, 2, 1, 3, 0, 2, 3, 1];
+  function scheduleMusic() {
+    A.timer = null;
+    if (!HF.musicOn || !A.ctx || A.ctx.state !== 'running' || document.hidden) return;
+    var now = A.ctx.currentTime;
+    if (A.next < now) A.next = now + 0.03;
+    while (A.next < now + 0.35) {
+      var chord = chords[Math.floor(A.step / 8) % chords.length];
+      musicNote(chord[pattern[A.step % 8]] * 2, A.next, 0.65, 0.11, 'triangle');
+      if (A.step % 8 === 0) musicNote(chord[0], A.next, 2.8, 0.09, 'sine');
+      A.next += 0.38;
+      A.step++;
+    }
+    A.timer = setTimeout(scheduleMusic, 120);
+  }
+  HF.musicPause = function () {
+    if (A.timer !== null) clearTimeout(A.timer);
+    A.timer = null;
+    if (A.musicGain) A.musicGain.gain.setTargetAtTime(0, A.ctx.currentTime, 0.025);
+    for (var i = 0; i < A.voices.length; i++) A.voices[i].stop(A.ctx.currentTime + 0.08);
+    A.voices = [];
+  };
+  HF.musicUpdate = function () {
+    if (!HF.musicOn || document.hidden) { HF.musicPause(); return; }
+    if (!A.ctx) { HF.audioArm(); return; }
+    if (A.ctx.state !== 'running') { HF.audioArm(); return; }
+    A.musicGain.gain.setTargetAtTime(0.23, A.ctx.currentTime, 0.08);
+    if (A.timer === null) { A.next = A.ctx.currentTime + 0.03; scheduleMusic(); }
+  };
+  HF.audioArm = function () {
+    if (!HF.soundOn && !HF.musicOn) return;
+    if (!A.ctx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) { audioError('Web Audio is not supported'); return; }
+      try {
+        A.ctx = new AC();
+        A.master = A.ctx.createGain();
+        A.master.gain.value = 0.42;
+        A.master.connect(A.ctx.destination);
+        A.musicGain = A.ctx.createGain();
+        A.musicGain.gain.value = 0;
+        A.musicGain.connect(A.master);
+      } catch (e) { A.ctx = null; audioError(e); return; }
+    }
+    if (A.ctx.state === 'suspended') {
+      A.ctx.resume().then(function () { HF.musicUpdate(); }, audioError);
+    } else if (A.ctx.state === 'running') HF.musicUpdate();
+    else audioError('AudioContext is ' + A.ctx.state);
+  };
+
+  function tone(f0, f1, dur, type, gain, delay) {
+    if (!A.ctx) return;
+    var t = A.ctx.currentTime + (delay || 0);
+    var o = A.ctx.createOscillator(), g = A.ctx.createGain();
+    o.type = type || 'square';
+    o.frequency.setValueAtTime(f0, t);
+    if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(gain || 0.25, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+    o.connect(g); g.connect(A.master);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  var noiseBuf = null;
+  function noise(dur, gain, cutoff, delay) {
+    if (!A.ctx) return;
+    if (!noiseBuf) {
+      noiseBuf = A.ctx.createBuffer(1, A.ctx.sampleRate * 0.7, A.ctx.sampleRate);
+      var d = noiseBuf.getChannelData(0);
+      for (var i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    }
+    var t = A.ctx.currentTime + (delay || 0);
+    var src = A.ctx.createBufferSource(); src.buffer = noiseBuf;
+    var f = A.ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.setValueAtTime(cutoff || 900, t);
+    f.frequency.exponentialRampToValueAtTime(180, t + dur);
+    var g = A.ctx.createGain();
+    g.gain.setValueAtTime(gain || 0.3, t);
+    g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+    src.connect(f); f.connect(g); g.connect(A.master);
+    src.start(t); src.stop(t + dur + 0.02);
+  }
+
+  HF.sfx = function (name) {
+    if (!HF.soundOn) return;
+    HF.audioArm();
+    if (!A.ctx || A.ctx.state === 'closed') return;
+    switch (name) {
+        case 'click': tone(520, 620, 0.05, 'square', 0.14); break;
+        case 'select': tone(700, 980, 0.08, 'square', 0.18); break;
+        case 'move': tone(380, 250, 0.1, 'triangle', 0.16); tone(300, 220, 0.08, 'triangle', 0.1, 0.06); break;
+        case 'pan': tone(220, 210, 0.03, 'sine', 0.05); break;
+        case 'fire': noise(0.22, 0.28, 1800); tone(185, 55, 0.2, 'triangle', 0.22); tone(640, 240, 0.045, 'triangle', 0.08); break;
+        case 'hit': noise(0.14, 0.2, 1100); tone(155, 75, 0.14, 'triangle', 0.14); break;
+        case 'ko': noise(0.48, 0.34, 1600); tone(135, 42, 0.4, 'triangle', 0.26); tone(70, 34, 0.5, 'sine', 0.23, 0.04); break;
+        case 'build': tone(420, 520, 0.09, 'square', 0.15); tone(560, 700, 0.09, 'square', 0.15, 0.09); tone(760, 900, 0.12, 'square', 0.16, 0.18); break;
+        case 'capture': tone(620, 780, 0.1, 'square', 0.18); tone(880, 1040, 0.14, 'square', 0.18, 0.1); break;
+        case 'turn': tone(300, 420, 0.1, 'triangle', 0.14); tone(420, 300, 0.1, 'triangle', 0.12, 0.1); break;
+        case 'deny': tone(190, 120, 0.16, 'sawtooth', 0.16); break;
+        case 'win': [523, 659, 784, 1046, 1318].forEach(function (f, i) { tone(f, f, 0.2, 'square', 0.2, i * 0.13); }); break;
+        case 'lose': [523, 415, 349, 262].forEach(function (f, i) { tone(f, f * 0.98, 0.26, 'triangle', 0.2, i * 0.17); }); break;
+        default: tone(440, 440, 0.05, 'sine', 0.1);
+    }
+  };
+})();
+
+
+/* ==== part p10_main.js ==== */
+/* ===== HEXFRONT :: boot, main loop, title backdrop, debug hooks ===== */
+(function () {
+  var M = HF.main = {};
+  var demo = null, demoR = 12;
+
+  function makeDemo() {
+    var stg = HF.STAGES[3 + (Date.now() % 5)];
+    demo = HF.genMap(stg);
+    demo.stageIdx = HF.STAGES.indexOf(stg);
+    demo.stage = stg;
+    demo.cells.forEach(function (c, i) { if (c.prop && c.own < 0) c.own = (i % 5 === 0) ? 0 : (i % 7 === 0 ? 1 : -1); });
+    demo.theme = stg.theme;
+    demo.hq = [-1, -1];
+    demo.units = [];
+    demo.occ = new Int32Array(demo.cells.length);
+    demo.turn = 1; demo.side = 0; demo.over = null; demo.limit = stg.limit;
+    demo.funds = [0, 0]; demo.log = [];
+    HF.view.cam.R = demoR;
+    HF.view.fit(demo);
+    HF.view.cam.R = Math.min(HF.view.cam.R + 6, HF.view.RMAX);
+    HF.view.snap(demo);
+  }
+
+  function driftDemo(dt) {
+    if (!demo) return;
+    var d = HF.view.mapWH(demo), mw = d[0], mh = d[1];
+    HF.view.cam.x += dt * 0.022;
+    if (HF.view.cam.x > mw - HF.view.w) { HF.view.cam.x = 0; }
+    HF.view.cam.y = HF.clamp(HF.view.cam.y, 0, Math.max(0, mh - HF.view.h));
+    HF.view.dirtyTerr = false;
+  }
+
+  var last = 0;
+  function frame(now) {
+    var dt = Math.min(60, now - (last || now));
+    last = now;
+    HF.ui.step(now, dt);
+    var s = HF.ui.st || demo;
+    if (s) {
+      if (!HF.ui.st) driftDemo(dt);
+      HF.view.draw(s, HF.ui.st ? HF.ui : null);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  M.boot = function () {
+    HF.ui.init();
+    makeDemo();
+    var rot = document.getElementById('rotate');
+    if (rot) rot.style.display = (window.innerHeight > window.innerWidth * 1.05 && window.innerWidth < 820) ? 'flex' : 'none';
+    if (location.search.indexOf('debug=1') >= 0) { HF.ui.cheat = true; }
+    var sv = HF.readSave();
+    if (sv && sv.lang && HF.LANGS.indexOf(sv.lang) >= 0 && !HF.loadProfile().lang) { HF.lang = sv.lang; HF.ui.applyLang(); }
+    requestAnimationFrame(frame);
+  };
+
+  /* ---------- test / screenshot helpers ---------- */
+  HF.ui.dbg = {
+    start: function (idx, diff) {
+      if (diff) { HF.ui.prof.diff = diff; HF.saveProfile(HF.ui.prof); }
+      HF.ui.startGame(idx);
+      return HF.ui.st ? HF.ui.st.turn : null;
+    },
+    autoTurns: function (n) {
+      var s = HF.ui.st;
+      if (!s) return 'nostate';
+      for (var k = 0; k < n && !s.over; k++) {
+        if (s.side === 0) HF.aiTurn(s);
+        HF.endTurn(s);
+        if (!s.over && s.side === 1) { HF.aiTurn(s); HF.endTurn(s); }
+      }
+      HF.ui.queue = []; HF.view.anim = null; HF.view.popups.length = 0; HF.view.fx.length = 0;
+      if (s.over) HF.ui.onGameOver(); else HF.ui.save();
+      HF.ui.refreshHud(); HF.ui.renderLog(); HF.ui.refreshActs();
+      return { turn: s.turn, over: s.over, units: s.units.length, funds: s.funds.slice() };
+    },
+    tap: function (i) { HF.ui.tapHex(i); },
+    end: function () { HF.ui.endTurn(); },
+    zoom: function (d) { HF.ui.zoom(d); },
+    fit: function () { if (HF.ui.st) HF.view.fit(HF.ui.st); },
+    center: function (i) { if (HF.ui.st) HF.view.center(HF.ui.st, i); },
+    fx: function () {
+      var s = HF.ui.st || demo;
+      if (!s) return 'nostate';
+      var i = Math.floor(s.cells.length / 2);
+      HF.view.boom(s, i);
+      HF.view.pop(s, i, '-42', '#ffd27a');
+      HF.view.hit(s, i - 1, i);
+      return 'ok';
+    },
+    screen: function (kind) { HF.ui.renderScreen(kind); return HF.ui.openScreen || 'title'; },
+    close: function () { HF.ui.closeSheet(); },
+    select: function (id) { var u = HF.byId(HF.ui.st, id); if (u) HF.ui.selectUnit(u); },
+    cheat: function () { HF.ui.cheat = true; },
+    save: function () { HF.ui.save(); return HF.store.get(HF.SAVE_KEY) ? 'ok' : 'fail'; },
+    hasSave: function () { return !!HF.readSave(); },
+    state: function () {
+      var s = HF.ui.st; if (!s) return null;
+      return { turn: s.turn, side: s.side, funds: s.funds.slice(), units: s.units.length, over: s.over, cells: s.cells.length, log: s.log.length };
+    },
+    buildHere: function (i, tid) { return HF.canBuild(HF.ui.st, i, 0, tid); },
+    unitIds: function () { return HF.ui.st ? HF.ui.st.units.map(function (u) { return u.id; }) : []; }
+  };
+  function renderTo(kind) {
+    if (kind === 'title') HF.ui.showTitle();
+    else if (kind === 'stages') HF.openSheet('<div></div>', 'stages');
+  }
+  window.HFX = HF;
+})();
+
+</script>
+<script>
+window.addEventListener('error', function (e) {
+  try {
+    var t = document.getElementById('toast');
+    if (t) { t.textContent = 'ERR ' + (e.message || 'unknown') + ' @' + (e.lineno || '?'); t.classList.add('on'); }
+  } catch (_) { }
+});
+try { HF.main.boot(); } catch (err) {
+  var s = document.getElementById('sheet'), m = document.getElementById('modal');
+  if (s) { s.innerHTML = '<h2>BOOT ERROR</h2><pre>' + String(err && err.stack || err) + '</pre>'; }
+  if (m) m.classList.add('on');
+}
+</script>
+</body>
+</html>
+

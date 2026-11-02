@@ -1,0 +1,16 @@
+</script>
+<script>
+window.addEventListener('error', function (e) {
+  try {
+    var t = document.getElementById('toast');
+    if (t) { t.textContent = 'ERR ' + (e.message || 'unknown') + ' @' + (e.lineno || '?'); t.classList.add('on'); }
+  } catch (_) { }
+});
+try { HF.main.boot(); } catch (err) {
+  var s = document.getElementById('sheet'), m = document.getElementById('modal');
+  if (s) { s.innerHTML = '<h2>BOOT ERROR</h2><pre>' + String(err && err.stack || err) + '</pre>'; }
+  if (m) m.classList.add('on');
+}
+</script>
+</body>
+</html>
